@@ -90,7 +90,7 @@ function createImages(data) {
   data.forEach((row) => {
     images.push(row.f);
   });
-  const SIZE = 50;
+  const SIZE = 300;
   let zIndexCounter = 1;
 
   // function randPos(input) {
@@ -103,15 +103,15 @@ function createImages(data) {
     const halfW = window.innerWidth / 3;
     const halfH = window.innerHeight / 3;
 
-    const col = index % 2; // 0 or 1
-    const row = Math.floor(index / 2); // 0 or 1
+    const col = index % 3; // 0 or 1
+    const row = Math.floor(index / 3); // 0 or 1
 
     const xMin = col * halfW;
     const yMin = row * halfH;
 
     return {
       x: xMin + Math.random() * (halfW - SIZE),
-      y: yMin + Math.random() * (halfH - SIZE),
+      y: yMin + Math.random() * (halfH - 200),
     };
   }
   images.forEach((src, index) => {

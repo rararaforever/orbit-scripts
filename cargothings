@@ -1,7 +1,9 @@
 <script src="https://cdn.jsdelivr.net/gh/pascal-is-waging/thingsandall/script.js"></script>
 
-<!-- for the thing -->
+<!-- spotlight -->
+<!-- css -->
 <link
   rel="stylesheet"
-  href="https://cdn.jsdelivr.net/gh/rararaforever/orbit-scripts@a584882c41b748b80a9c22157b71d476d66123ec/spotlight/spotlight.css"
+  href="https://cdn.jsdelivr.net/gh/rararaforever/orbit-scripts@5c662755c2ede78a9c0ff33aff1f4d2b00b2a335/spotlight/spotlight.css"
 />
+<script src="https://cdn.jsdelivr.net/gh/rararaforever/orbit-scripts@/spotlight/spotlight.js"></script>
