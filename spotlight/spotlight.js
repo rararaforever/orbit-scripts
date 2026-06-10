@@ -69,7 +69,6 @@ function popupSetup() {
 
   document.addEventListener("click", (e) => {
     const trigger = e.target.closest(".popup-trigger");
-    console.log("dude");
 
     if (trigger) {
       console.log("Popup trigger clicked:", trigger.dataset.popup);
@@ -151,6 +150,7 @@ function createImages(data) {
     document.getElementById("stage").appendChild(div_img);
 
     $(div_img).draggable();
+    $(div_img).addClass(".bro");
     // makeDraggable(div_img);
     makehover(div_img);
   });
