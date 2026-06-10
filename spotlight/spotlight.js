@@ -69,6 +69,7 @@ function popupSetup() {
 
   document.addEventListener("click", (e) => {
     const trigger = e.target.closest(".popup-trigger");
+    console.log("dude");
 
     if (trigger) {
       console.log("Popup trigger clicked:", trigger.dataset.popup);
@@ -116,23 +117,41 @@ function createImages(data) {
   }
   images.forEach((src, index) => {
     const pos = randPos(index);
+    const div_img = document.createElement("div");
     const img = document.createElement("img");
+    const img_btn = document.createElement("div");
+    const img_btnText = document.createElement("span");
+    const img_btnSpot = document.createElement("img");
 
-    img.className = "img popup-trigger";
+    div_img.style.position = "absolute";
+    div_img.style.left = `${pos.x}px`;
+    div_img.style.top = `${pos.y}px`;
+
+    img.className = "img";
     img.src = src;
-    img.dataset.popup = `popup${index + 1}`;
 
-    img.style.position = "absolute";
-    img.style.left = `${pos.x}px`;
-    img.style.top = `${pos.y}px`;
+    img_btn.className = "popup-trigger";
+    img_btn.dataset.popup = `popup${index + 1}`;
+
+    img_btnText.className = "popup__spot--text";
+    img_btnText.innerHTML = "Read More!";
+
+    img_btnSpot.src =
+      "https://freight.cargo.site/t/original/i/695b2196d9f78b86abe73339ffbe4ea423a80fd598ea86e1b5babd35375e4068/magni.png";
+    img_btnSpot.className = "popup__spot";
 
     if (window.innerWidth < 500) {
       // img.style.width = "150px";
     }
+    img_btn.appendChild(img_btnText);
+    img_btn.appendChild(img_btnSpot);
+    div_img.appendChild(img);
+    div_img.appendChild(img_btn);
+    document.getElementById("stage").appendChild(div_img);
 
-    document.getElementById("stage").appendChild(img);
-
-    makeDraggable(img);
+    $(div_img).draggable();
+    // makeDraggable(div_img);
+    makehover(div_img);
   });
 }
 
@@ -234,6 +253,17 @@ function parseText(text) {
   });
 
   return p;
+}
+
+function makehover(element) {
+  element.addEventListener("mouseenter", (e) => {
+    const trigger = element.querySelector(".popup-trigger");
+    trigger.style.display = "flex";
+  });
+  element.addEventListener("mouseleave", (e) => {
+    const trigger = element.querySelector(".popup-trigger");
+    trigger.style.display = "none";
+  });
 }
 
 function makeDraggable(element) {

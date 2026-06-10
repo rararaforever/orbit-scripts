@@ -5,7 +5,6 @@
 }
 
 .img {
-  position: absolute;
   object-fit: cover;
   max-width: 300px;
   user-select: none;
@@ -53,7 +52,30 @@
 .popup::-webkit-scrollbar {
   display: none;
 }
-
+.popup-trigger {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  position: absolute;
+  top: 74%;
+  left: 60%;
+  filter: drop-shadow(2px 4px 6px white);
+  width: 100%;
+  gap: 0;
+  display: none;
+}
+.popup-trigger:hover {
+  cursor: pointer;
+}
+.popup__spot {
+  width: 40px;
+  margin-left: -6px;
+}
+.popup__spot--text {
+  text-transform: uppercase;
+  color: #2452ff;
+  font-family: goozette;
+}
 .close-btn {
   position: absolute;
   top: 10px;
