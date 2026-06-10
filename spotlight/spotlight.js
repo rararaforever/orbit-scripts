@@ -149,9 +149,9 @@ function createImages(data) {
     div_img.appendChild(img_btn);
     document.getElementById("stage").appendChild(div_img);
 
-    $(div_img).draggable();
-    $(div_img).addClass(".bro");
-    // makeDraggable(div_img);
+    // $(div_img).draggable();
+    // $(div_img).addClass(".bro");
+    makeDraggable(div_img);
     makehover(div_img);
   });
 }

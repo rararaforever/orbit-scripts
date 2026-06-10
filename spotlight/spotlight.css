@@ -76,6 +76,9 @@
   color: #2452ff;
   font-family: goozette;
 }
+.popup-image:hover {
+  cursor: grabbing;
+}
 .close-btn {
   position: absolute;
   top: 10px;
