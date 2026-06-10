@@ -126,6 +126,7 @@ function createImages(data) {
     div_img.style.position = "absolute";
     div_img.style.left = `${pos.x}px`;
     div_img.style.top = `${pos.y}px`;
+    div_img.className = "popup-image";
 
     img.className = "img";
     img.src = src;
