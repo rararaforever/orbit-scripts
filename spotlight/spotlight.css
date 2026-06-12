@@ -32,6 +32,7 @@
 }
 
 .popup {
+  display: none;
   position: fixed;
   top: 50%;
   left: 50%;
@@ -62,10 +63,13 @@
   filter: drop-shadow(2px 4px 6px white);
   width: 100%;
   gap: 0;
-  display: none;
 }
 .popup-trigger:hover {
   cursor: pointer;
+  z-index: 2000;
+}
+.popup-trigger.inactive {
+  display: none;
 }
 .popup__spot {
   width: 40px;
@@ -75,6 +79,9 @@
   text-transform: uppercase;
   color: #2452ff;
   font-family: goozette;
+}
+.popup-image {
+  position: absolute;
 }
 .popup-image:hover {
   cursor: grabbing;
@@ -129,11 +136,13 @@
     display: flex;
     flex-direction: column;
     position: relative;
+    gap: 10rem;
   }
   #stage .img {
     position: relative !important;
     top: 0 !important;
     left: 0 !important;
+    max-width: 100%;
   }
   .popup {
     width: 90vw;
@@ -152,5 +161,14 @@
   }
   .close-btn {
     font-size: 24px;
+  }
+  .popup-image {
+    position: relative;
+    top: 0 !important;
+    left: 0 !important;
+  }
+  .popup-trigger:hover {
+    cursor: pointer;
+    z-index: 10;
   }
 }

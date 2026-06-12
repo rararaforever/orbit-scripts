@@ -30,9 +30,11 @@ async function logSheetData() {
     });
 
     console.log("Google Sheet Data:", data);
-    createPopup(data);
+
     createImages(data);
+    createPopup(data);
     popupSetup();
+    // makebtn();
   } catch (error) {
     console.error("❌ Error fetching sheet:", error);
   }
@@ -40,56 +42,74 @@ async function logSheetData() {
 
 logSheetData();
 
-function popupSetup() {
-  const popups = document.querySelectorAll(".popup");
+const popups = document.querySelectorAll(".popup");
 
-  function openPopup(id) {
-    console.log("Opening popup:", id);
+function openPopup(id) {
+  console.log("Opening popup:", id);
 
-    closeAllPopups();
+  closeAllPopups();
 
-    const popuptemp = document.getElementById(id);
-    console.log("Found popup element:", popuptemp);
-    if (!popuptemp) return;
+  const popuptemp = document.getElementById(id);
+  console.log("Found popup element:", popuptemp);
+  if (!popuptemp) return;
 
-    popuptemp.classList.toggle("active");
-    popuptemp.style.display = "block";
-  }
+  popuptemp.classList.toggle("active");
+  popuptemp.style.display = "block";
+}
 
-  function closeAllPopups() {
-    popups.forEach((popup) => {
-      popup.classList.remove("active");
-      popup.style.display = "none";
-    });
-  }
-
-  function closePopup(id) {
-    document.getElementById(`${popup}${id}`).style.display = "none";
-  }
-
-  document.addEventListener("click", (e) => {
-    const trigger = e.target.closest(".popup-trigger");
-
-    if (trigger) {
-      console.log("Popup trigger clicked:", trigger.dataset.popup);
-      if (
-        trigger.dataset.popup != "popup3" &&
-        trigger.dataset.popup != "popup5"
-      )
-        openPopup(trigger.dataset.popup);
-      else if (trigger.dataset.popup === "popup3")
-        window.location.assign("https://www.youtube.com/watch?v=MbtWYtUO6gk");
-      else if (trigger.dataset.popup === "popup5")
-        window.location.assign("https://www.youtube.com/watch?v=TdXAzUyEsgQ");
-    }
+function closeAllPopups() {
+  popups.forEach((popup) => {
+    popup.classList.remove("active");
+    popup.style.display = "none";
   });
+}
+
+function closePopup(id) {
+  document.getElementById(`${popup}${id}`).style.display = "none";
+}
+function popupSetup() {
+  // document.addEventListener("click", (e) => {
+  //   const trigger = e.target.closest(".popup-trigger");
+  //   console.log(trigger);
+  //   if (trigger) {
+  //     console.log("Popup trigger clicked:", trigger.dataset.popup);
+  //     if (
+  //       trigger.dataset.popup != "popup3" &&
+  //       trigger.dataset.popup != "popup5"
+  //     )
+  //       openPopup(trigger.dataset.popup);
+  //     else if (trigger.dataset.popup === "popup3")
+  //       window.location.assign("https://www.youtube.com/watch?v=MbtWYtUO6gk");
+  //     else if (trigger.dataset.popup === "popup5")
+  //       window.location.assign("https://www.youtube.com/watch?v=TdXAzUyEsgQ");
+  //   }
+  // });
+  // console.log(b);
+  // b.forEach((d) => {
+  //   d.addEventListener("click", (e) => {
+  //     console.log(e);
+  //     // const trigger = e.target.closest(".popup-trigger");
+  //     const trigger = e;
+  //     console.log(trigger);
+  //     if (trigger) {
+  //       console.log("Popup trigger clicked:", trigger.dataset.popup);
+  //       if (
+  //         trigger.dataset.popup != "popup3" &&
+  //         trigger.dataset.popup != "popup5"
+  //       )
+  //         openPopup(trigger.dataset.popup);
+  //       else if (trigger.dataset.popup === "popup3")
+  //         window.location.assign("https://www.youtube.com/watch?v=MbtWYtUO6gk");
+  //       else if (trigger.dataset.popup === "popup5")
+  //         window.location.assign("https://www.youtube.com/watch?v=TdXAzUyEsgQ");
+  //     }
+  //   });
+  // });
 }
 
 function createImages(data) {
   let images = [];
-  data.forEach((row) => {
-    images.push(row.f);
-  });
+
   const SIZE = 300;
   let zIndexCounter = 1;
 
@@ -114,7 +134,8 @@ function createImages(data) {
       y: yMin + Math.random() * (halfH - 200),
     };
   }
-  images.forEach((src, index) => {
+  data.forEach((row, index) => {
+    src = row.f;
     const pos = randPos(index);
     const div_img = document.createElement("div");
     const img = document.createElement("img");
@@ -122,7 +143,6 @@ function createImages(data) {
     const img_btnText = document.createElement("span");
     const img_btnSpot = document.createElement("img");
 
-    div_img.style.position = "absolute";
     div_img.style.left = `${pos.x}px`;
     div_img.style.top = `${pos.y}px`;
     div_img.className = "popup-image";
@@ -130,8 +150,14 @@ function createImages(data) {
     img.className = "img";
     img.src = src;
 
-    img_btn.className = "popup-trigger";
+    img_btn.className = "popup-trigger inactive";
+    if (row.d === "clickout") {
+      img_btn.dataset.clickout = row.e;
+      div_img.dataset.clickout = row.e;
+    }
+    console.log(row.d);
     img_btn.dataset.popup = `popup${index + 1}`;
+    div_img.dataset.popup = `popup${index + 1}`;
 
     img_btnText.className = "popup__spot--text";
     img_btnText.innerHTML = "Read More!";
@@ -140,19 +166,24 @@ function createImages(data) {
       "https://freight.cargo.site/t/original/i/695b2196d9f78b86abe73339ffbe4ea423a80fd598ea86e1b5babd35375e4068/magni.png";
     img_btnSpot.className = "popup__spot";
 
-    if (window.innerWidth < 500) {
-      // img.style.width = "150px";
-    }
     img_btn.appendChild(img_btnText);
     img_btn.appendChild(img_btnSpot);
     div_img.appendChild(img);
-    div_img.appendChild(img_btn);
-    document.getElementById("stage").appendChild(div_img);
+    if (window.innerWidth > 700) {
+      div_img.appendChild(img_btn);
+      document.getElementById("stage").appendChild(div_img);
+      makeDraggable(div_img);
+      makehover(div_img);
+      maketrigger(img_btn);
+    } else {
+      div_img.classList.add("popup-trigger");
+      document.getElementById("stage").appendChild(div_img);
+      maketrigger(div_img);
+    }
 
     // $(div_img).draggable();
     // $(div_img).addClass(".bro");
-    makeDraggable(div_img);
-    makehover(div_img);
+    // console.log(img_btn);
   });
 }
 
@@ -173,22 +204,21 @@ function createPopup(data) {
     const header = document.createElement("h3");
     header.innerText = row.c;
     container.appendChild(header);
+    popup.id = `popup${row.a}`;
     // conditions //
-    if (row.a === 1) {
+    if (row.d === "images") {
       // carasoul
-      popup.id = "popup1";
       createImageCarousel({
         container: container,
         images: [
-          "https://d2w9rnfcy7mm78.cloudfront.net/46778335/original_11353ef463509436772039323f61925e.jpeg?1780676602?bc=0",
-          "https://d2w9rnfcy7mm78.cloudfront.net/46778337/original_7b710dd7b55cc9a67765096e8703ea39.jpeg?1780676602?bc=0",
-          "https://d2w9rnfcy7mm78.cloudfront.net/46778336/original_40e27aa92f60e7bef2be62712e44fa24.jpeg?1780676602?bc=0",
+          "https://d2w9rnfcy7mm78.cloudfront.net/46995983/original_76fcd1df314d581a05d12cf2d4f6b5a0.jpeg?1781306116?bc=0",
+          "https://d2w9rnfcy7mm78.cloudfront.net/46995767/original_c3607b43f2242ca75764f38fcad31592.jpeg?1781304767?bc=0",
+          "https://d2w9rnfcy7mm78.cloudfront.net/46995984/original_5a81435bb7ec21efd06eda6b7f363eb5.jpeg?1781306116?bc=0",
         ],
       });
     }
-    if (row.a === 2) {
+    if (row.d === "audio") {
       // audio
-      popup.id = "popup2";
       const imgt = document.createElement("img");
       imgt.src =
         "https://d2w9rnfcy7mm78.cloudfront.net/46116463/original_5947a7b48f6f6ddc8eb45c60651addf7.jpeg?1778682155?bc=0";
@@ -198,20 +228,18 @@ function createPopup(data) {
     Your browser does not support the audio element.</audio>`;
       container.appendChild(parseText(row.g));
     }
-    if (row.a === 3) {
+    if (row.d === "clickout") {
       // video to link
-      popup.id = "popup3";
     }
-    if (row.a === 4) {
+    if (row.d === "video") {
       // video + text
-      popup.id = "popup4";
       container.innerHTML += `<iframe
           src="https://player.vimeo.com/video/1040969253?h=5b4383a2ae&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=5847"
           width="100%"
           height="360"
           frameborder="0"
           allow="autoplay; fullscreen; picture-in-picture"
-          allowfullscreen
+          
         ></iframe>`;
       container.appendChild(parseText(row.g));
     }
@@ -259,11 +287,26 @@ function parseText(text) {
 function makehover(element) {
   element.addEventListener("mouseenter", (e) => {
     const trigger = element.querySelector(".popup-trigger");
-    trigger.style.display = "flex";
+    // trigger.style.display = "flex";
+    trigger.classList.toggle("inactive");
   });
   element.addEventListener("mouseleave", (e) => {
     const trigger = element.querySelector(".popup-trigger");
-    trigger.style.display = "none";
+    // trigger.style.display = "none";
+    trigger.classList.toggle("inactive");
+  });
+}
+function maketrigger(element) {
+  element.addEventListener("click", (e) => {
+    const trigger = e.target.parentElement;
+    // const trigger = e;
+    console.log(trigger);
+    if (trigger) {
+      console.log("Popup trigger clicked:", trigger.dataset.popup);
+      if (trigger.dataset.clickout)
+        window.location.assign(trigger.dataset.clickout);
+      else openPopup(trigger.dataset.popup);
+    }
   });
 }
 
@@ -280,6 +323,10 @@ function makeDraggable(element) {
   const DRAG_THRESHOLD = 5;
 
   element.addEventListener("pointerdown", (e) => {
+    if (e.target.closest(".popup-trigger")) {
+      return;
+    }
+
     isDragging = true;
     hasDragged = false;
 
@@ -289,7 +336,6 @@ function makeDraggable(element) {
     initialLeft = parseFloat(element.style.left) || 0;
     initialTop = parseFloat(element.style.top) || 0;
 
-    // Bring to front
     element.style.zIndex = ++zIndexCounter;
 
     element.setPointerCapture(e.pointerId);
@@ -322,28 +368,28 @@ function makeDraggable(element) {
     e.preventDefault();
   });
 
-  element.addEventListener("pointerup", () => {
+  element.addEventListener("pointerup", (e) => {
     isDragging = false;
     hasDragged = false;
-    e.preventDefault();
+    // e.preventDefault();
   });
 
-  element.addEventListener("pointercancel", () => {
-    isDragging = false;
-    e.preventDefault();
-  });
+  // element.addEventListener("pointercancel", (e) => {
+  //   isDragging = false;
+  //   // e.preventDefault();
+  // });
 
   // Prevent popup opening after dragging
-  element.addEventListener(
-    "click",
-    (e) => {
-      if (hasDragged) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-    },
-    true,
-  );
+  // element.addEventListener(
+  //   "click",
+  //   (e) => {
+  //     if (hasDragged) {
+  //       e.preventDefault();
+  //       e.stopPropagation();
+  //     }
+  //   },
+  //   true,
+  // );
 }
 
 //image carrousel
