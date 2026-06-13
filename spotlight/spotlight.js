@@ -1,17 +1,14 @@
 // let data;
 window.data = window.data || {};
-
-(() => {
-  // const data = {};
-  const SPREADSHEET_ID = "1ss8B5h4rJbP9pAfxvN5aq0GRdIh13jTkCSUelQXcvoU";
-  const SHEET_TITLE = "Amir - Web";
-})();
-
-const URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?sheet=${SHEET_TITLE}`;
+window.SPREADSHEET_ID = "1ss8B5h4rJbP9pAfxvN5aq0GRdIh13jTkCSUelQXcvoU" || {};
+window.SHEET_TITLE = "Amir - Web" || {};
+window.URLL =
+  `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?sheet=${SHEET_TITLE}` ||
+  {};
 
 async function logSheetData() {
   try {
-    const response = await fetch(URL);
+    const response = await fetch(URLL);
     const text = await response.text();
 
     const jsonString = text.substring(
