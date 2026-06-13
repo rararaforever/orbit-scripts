@@ -1,4 +1,5 @@
-let data;
+// let data;
+window.data = window.data || {};
 const SPREADSHEET_ID = "1ss8B5h4rJbP9pAfxvN5aq0GRdIh13jTkCSUelQXcvoU";
 const SHEET_TITLE = "Amir - Web";
 
