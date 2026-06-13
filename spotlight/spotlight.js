@@ -5,6 +5,7 @@ window.SHEET_TITLE = "Amir - Web" || {};
 window.URLL =
   `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?sheet=${SHEET_TITLE}` ||
   {};
+window.popups = document.querySelectorAll(".popup") || {};
 
 async function logSheetData() {
   try {
@@ -43,8 +44,6 @@ async function logSheetData() {
 }
 
 logSheetData();
-
-const popups = document.querySelectorAll(".popup");
 
 function openPopup(id) {
   console.log("Opening popup:", id);
