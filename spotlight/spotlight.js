@@ -1,7 +1,11 @@
 // let data;
 window.data = window.data || {};
-const SPREADSHEET_ID = "1ss8B5h4rJbP9pAfxvN5aq0GRdIh13jTkCSUelQXcvoU";
-const SHEET_TITLE = "Amir - Web";
+
+(() => {
+  // const data = {};
+  const SPREADSHEET_ID = "1ss8B5h4rJbP9pAfxvN5aq0GRdIh13jTkCSUelQXcvoU";
+  const SHEET_TITLE = "Amir - Web";
+})();
 
 const URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?sheet=${SHEET_TITLE}`;
 
