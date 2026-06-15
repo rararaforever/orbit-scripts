@@ -36,7 +36,7 @@ async function logSheetData() {
 
     createImages(data);
     createPopup(data);
-    popupSetup();
+    // popupSetup();
     // makebtn();
   } catch (error) {
     console.error("❌ Error fetching sheet:", error);
@@ -67,45 +67,6 @@ function closeAllPopups() {
 
 function closePopup(id) {
   document.getElementById(`${popup}${id}`).style.display = "none";
-}
-function popupSetup() {
-  // document.addEventListener("click", (e) => {
-  //   const trigger = e.target.closest(".popup-trigger");
-  //   console.log(trigger);
-  //   if (trigger) {
-  //     console.log("Popup trigger clicked:", trigger.dataset.popup);
-  //     if (
-  //       trigger.dataset.popup != "popup3" &&
-  //       trigger.dataset.popup != "popup5"
-  //     )
-  //       openPopup(trigger.dataset.popup);
-  //     else if (trigger.dataset.popup === "popup3")
-  //       window.location.assign("https://www.youtube.com/watch?v=MbtWYtUO6gk");
-  //     else if (trigger.dataset.popup === "popup5")
-  //       window.location.assign("https://www.youtube.com/watch?v=TdXAzUyEsgQ");
-  //   }
-  // });
-  // console.log(b);
-  // b.forEach((d) => {
-  //   d.addEventListener("click", (e) => {
-  //     console.log(e);
-  //     // const trigger = e.target.closest(".popup-trigger");
-  //     const trigger = e;
-  //     console.log(trigger);
-  //     if (trigger) {
-  //       console.log("Popup trigger clicked:", trigger.dataset.popup);
-  //       if (
-  //         trigger.dataset.popup != "popup3" &&
-  //         trigger.dataset.popup != "popup5"
-  //       )
-  //         openPopup(trigger.dataset.popup);
-  //       else if (trigger.dataset.popup === "popup3")
-  //         window.location.assign("https://www.youtube.com/watch?v=MbtWYtUO6gk");
-  //       else if (trigger.dataset.popup === "popup5")
-  //         window.location.assign("https://www.youtube.com/watch?v=TdXAzUyEsgQ");
-  //     }
-  //   });
-  // });
 }
 
 function createImages(data) {

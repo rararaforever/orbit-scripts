@@ -174,8 +174,8 @@ function createPopup(data) {
         "https://d2w9rnfcy7mm78.cloudfront.net/46116463/original_5947a7b48f6f6ddc8eb45c60651addf7.jpeg?1778682155?bc=0";
       container.appendChild(imgt);
       container.innerHTML += ` <audio controls>
-    <source src="https://attachments.are.na/46397004/5a7cd958c42e10770af3626c66df729a.mp3?1779388381" type="audio/mpeg">
-    Your browser does not support the audio element.</audio>`;
+      <source src="https://attachments.are.na/46397004/5a7cd958c42e10770af3626c66df729a.mp3?1779388381" type="audio/mpeg">
+      Your browser does not support the audio element.</audio>`;
       container.appendChild(parseText(row.g));
     }
     if (row.a === 3) {
@@ -186,13 +186,13 @@ function createPopup(data) {
       // video + text
       popup.id = "popup4";
       container.innerHTML += `<iframe
-          src="https://player.vimeo.com/video/1040969253?h=5b4383a2ae&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=5847"
-          width="100%"
-          height="360"
-          frameborder="0"
-          allow="autoplay; fullscreen; picture-in-picture"
-          allowfullscreen
-        ></iframe>`;
+            src="https://player.vimeo.com/video/1040969253?h=5b4383a2ae&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=5847"
+            width="100%"
+            height="360"
+            frameborder="0"
+            allow="autoplay; fullscreen; picture-in-picture"
+            allowfullscreen
+          ></iframe>`;
       container.appendChild(parseText(row.g));
     }
     popup.appendChild(container);
