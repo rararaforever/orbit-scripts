@@ -105,6 +105,11 @@
   overflow-y: scroll;
   font-size: 14px;
   line-height: 1.5;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.popup__container::-webkit-scrollbar {
+  display: none;
 }
 .popup__container img {
   max-width: 100%;
