@@ -75,12 +75,6 @@ function createImages(data) {
   const SIZE = 300;
   let zIndexCounter = 1;
 
-  // function randPos(input) {
-  //   return {
-  //     x: Math.random() * (window.innerWidth * 0.7 - SIZE),
-  //     y: Math.random() * (window.innerWidth * 0.7 - SIZE),
-  //   };
-  // }
   function randPos(index) {
     const halfW = window.innerWidth / 3;
     const halfH = window.innerHeight / 3;
@@ -195,19 +189,79 @@ function createPopup(data) {
     }
     if (row.d === "video") {
       // video + text
-      container.innerHTML += `<iframe
-          src="https://player.vimeo.com/video/1040969253?h=5b4383a2ae&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=5847"
+      const video__container = document.createElement("div");
+      video__container.className = "video__container";
+      container.appendChild(video__container);
+      const info = createEmbed(row.e);
+      video__container.innerHTML += `<iframe
+          src="${info.embedUrl}${info.hash ? `?h=${info.hash}` : ""}"
           width="100%"
-          height="360"
+          height="100%"
           frameborder="0"
           allow="autoplay; fullscreen; picture-in-picture"
-          
         ></iframe>`;
       container.appendChild(parseText(row.g));
     }
     popup.appendChild(container);
     document.body.appendChild(popup);
   });
+}
+
+// youtube and vimeo embed helper
+function createEmbed(url) {
+  {
+    try {
+      const parsedUrl = new URL(url);
+
+      // YouTube
+      if (
+        parsedUrl.hostname.includes("youtube.com") ||
+        parsedUrl.hostname.includes("youtu.be")
+      ) {
+        let videoId;
+
+        if (parsedUrl.hostname.includes("youtu.be")) {
+          videoId = parsedUrl.pathname.slice(1);
+        } else {
+          videoId = parsedUrl.searchParams.get("v");
+        }
+
+        if (!videoId) {
+          return null;
+        }
+
+        return {
+          platform: "youtube",
+          videoId,
+          embedUrl: `https://www.youtube.com/embed/${videoId}`,
+        };
+      }
+
+      // Vimeo
+      if (parsedUrl.hostname.includes("vimeo.com")) {
+        // const match = parsedUrl.pathname.match(/\/(\d+)/);
+        const match = url.match(/vimeo\.com\/(\d+)(?:\/([a-zA-Z0-9]+))?/);
+
+        if (!match) {
+          return null;
+        }
+
+        const videoId = match[1];
+        const videohash = match[2];
+
+        return {
+          platform: "vimeo",
+          videoId,
+          embedUrl: `https://player.vimeo.com/video/${videoId}`,
+          ...(videohash ? { hash: videohash } : {}),
+        };
+      }
+
+      return null;
+    } catch {
+      return null;
+    }
+  }
 }
 
 // parser for popup

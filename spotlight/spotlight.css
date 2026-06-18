@@ -135,6 +135,10 @@
   font-family: scrap;
   font-size: 5.4rem;
 }
+.video__container {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+}
 @media screen and (max-width: 700px) {
   #stage {
     height: auto;
