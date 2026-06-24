@@ -223,7 +223,17 @@ function createEmbed(url) {
         if (parsedUrl.hostname.includes("youtu.be")) {
           videoId = parsedUrl.pathname.slice(1);
         } else {
-          videoId = parsedUrl.searchParams.get("v");
+          const pathParts = parsedUrl.pathname.split("/").filter(Boolean);
+
+          if (
+            pathParts[0] === "shorts" ||
+            pathParts[0] === "embed" ||
+            pathParts[0] === "live"
+          ) {
+            videoId = pathParts[1];
+          } else {
+            videoId = parsedUrl.searchParams.get("v");
+          }
         }
 
         if (!videoId) {
