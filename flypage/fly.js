@@ -1,9 +1,25 @@
 function intialize() {
   const team = [
-    { img: "/flypage/fly1.png", name: "Amir", sound: "/flypage/fly.mp3" },
-    { img: "/flypage/fly2.png", name: "Jasmine", sound: "/flypage/fly.mp3" },
-    { img: "/flypage/fly3.png", name: "Khanh", sound: "/flypage/fly.mp3" },
-    { img: "/flypage/fly4.png", name: "Nandini", sound: "/flypage/fly.mp3" },
+    {
+      img: "https://freight.cargo.site/t/original/i/fed4109ae842c69f706135da8fb20bb911cfc8fef6ae5641e0cda73c8bae08f5/fly1.png",
+      name: "Amir",
+      sound: "/flypage/fly.mp3",
+    },
+    {
+      img: "https://freight.cargo.site/t/original/i/9a352e67bb270fc0d25d5750799119bffa13f3793e79b093d4f4bae5a44bb86d/fly2.png",
+      name: "Jasmine",
+      sound: "/flypage/fly.mp3",
+    },
+    {
+      img: "https://freight.cargo.site/t/original/i/eb48dd5c9026e84874a874d8cbe535b1dbc3d52c5378fc7d9ae8044cd4473220/fly3.png",
+      name: "Khanh",
+      sound: "/flypage/fly.mp3",
+    },
+    {
+      img: "https://freight.cargo.site/t/original/i/a4a0cd5e0d6321803d6c881e52e370ba7f8c8e1d4b9155035e44c684119d41f7/fly4.png",
+      name: "Nandini",
+      sound: "/flypage/fly.mp3",
+    },
   ];
 
   const container = document.createElement("div");
