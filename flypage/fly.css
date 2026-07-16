@@ -3,6 +3,13 @@
   padding: 0;
   box-sizing: border-box;
 }
+*,
+html {
+  cursor:
+    url("https://freight.cargo.site/t/original/i/890f7fbcbc4fb536df840fc2f08b17f61b4b67fd8f2d78f563d18f2653c93182/cursor.png")
+      33 48,
+    auto;
+}
 body {
   overflow: hidden;
   width: 100vw;
@@ -16,6 +23,7 @@ body {
   user-select: none;
   transform-origin: center;
   will-change: left, top, transform;
+  filter: drop-shadow(2px 4px 5px #ffa500c7);
 }
 .fly img {
   width: 70px;
@@ -24,11 +32,22 @@ body {
   position: absolute;
   left: 45%;
   top: 13%;
-  padding: 2rem;
+  padding: 0rem 0.5rem;
+  font-size: 1.2rem;
+  border: none;
+  background: orange;
+  filter: blur(1px);
+  color: white;
+  font-family: scrap;
   border-radius: 20px;
 }
 .soundbtn.off {
   animation: buttonFadeOut 0.5s forwards;
+}
+.name {
+  font-size: 1.6rem;
+  margin-top: -10px;
+  color: white;
 }
 
 @keyframes buttonFadeOut {
