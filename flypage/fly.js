@@ -60,6 +60,7 @@ function intialize() {
 function run() {
   const flies = document.querySelectorAll(".fly");
   const soundBtn = document.querySelector(".soundbtn");
+  const stage = document.getElementById("stage");
   let audioContext = null;
   let audioStarted = false;
 
@@ -76,7 +77,7 @@ function run() {
   });
 
   soundBtn.addEventListener("pointerdown", toggleSound, { once: true });
-  document.addEventListener("pointerdown", toggleSound, { once: true });
+  stage.addEventListener("pointerdown", toggleSound, { once: true });
 
   function toggleSound() {
     if (audioStarted) return;
