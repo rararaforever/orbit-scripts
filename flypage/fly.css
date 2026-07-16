@@ -23,19 +23,19 @@ body {
   user-select: none;
   transform-origin: center;
   will-change: left, top, transform;
-  filter: drop-shadow(2px 4px 5px #ffa500c7);
+  filter: drop-shadow(0px 3px 5px #ff0000);
 }
 .fly img {
   width: 70px;
 }
 .soundbtn {
   position: absolute;
-  left: 45%;
-  top: 13%;
+  left: 37%;
+  top: 40%;
   padding: 0rem 0.5rem;
-  font-size: 1.2rem;
+  font-size: 3rem;
   border: none;
-  background: orange;
+  background: #ff7000;
   filter: blur(1px);
   color: white;
   font-family: scrap;
@@ -45,9 +45,12 @@ body {
   animation: buttonFadeOut 0.5s forwards;
 }
 .name {
-  font-size: 1.6rem;
-  margin-top: -10px;
+  font-size: 1.3rem;
   color: white;
+  position: absolute;
+  bottom: 16px;
+
+  filter: drop-shadow(2px 3px 5px #ff0000);
 }
 
 @keyframes buttonFadeOut {
