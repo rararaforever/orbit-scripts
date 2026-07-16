@@ -1,4 +1,5 @@
 function intialize() {
+  const stage = document.getElementById("stage");
   const team = [
     {
       img: "https://freight.cargo.site/t/original/i/fed4109ae842c69f706135da8fb20bb911cfc8fef6ae5641e0cda73c8bae08f5/fly1.png",
@@ -49,7 +50,7 @@ function intialize() {
 
   container.appendChild(button);
 
-  document.body.appendChild(container);
+  stage.appendChild(container);
 }
 
 function run() {
