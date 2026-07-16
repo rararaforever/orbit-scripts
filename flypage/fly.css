@@ -1,0 +1,46 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+body {
+  overflow: hidden;
+  width: 100vw;
+  height: 100vh;
+  background: #f5f5f5;
+} /* Fly images */
+.fly {
+  position: fixed;
+  width: 70px;
+  pointer-events: auto;
+  user-select: none;
+  transform-origin: center;
+  will-change: left, top, transform;
+}
+.fly img {
+  width: 70px;
+}
+.soundbtn {
+  position: absolute;
+  left: 45%;
+  top: 13%;
+  padding: 2rem;
+  border-radius: 20px;
+}
+.soundbtn.off {
+  animation: buttonFadeOut 0.5s forwards;
+}
+
+@keyframes buttonFadeOut {
+  /* animate button out */
+  0% {
+    opacity: 1;
+    display: block;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    display: none;
+    transform: scale(0);
+  }
+}
