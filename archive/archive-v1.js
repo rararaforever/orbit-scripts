@@ -13,7 +13,11 @@ window.URLA =
   {};
 window.popups = document.querySelectorAll(".popup") || {};
 
+let datas, ass, loo;
+
 let ele_tiger = document.querySelector(".tiger");
+
+// end of vars
 
 // fetch data for google sheet
 async function fetchSheet(url) {
@@ -26,7 +30,6 @@ async function fetchSheet(url) {
   );
 
   const json = JSON.parse(jsonString);
-
   return json.table.rows.map((row) => {
     const obj = {};
 
@@ -42,25 +45,22 @@ async function fetchSheet(url) {
 async function logSheetData() {
   try {
     [data, assets] = await Promise.all([fetchSheet(URLD), fetchSheet(URLA)]);
+    datas = data.slice(0, 100);
+    ass = assets.slice(0, 100);
+    loo = createLookup(ass);
     lookup = createLookup(assets);
-    console.log("Sheet 1:", data);
-    console.log("Sheet 2:", assets);
-    console.log("Sheet 3:", lookup);
+    console.log("Sheet 1:", datas);
+    console.log("Sheet 2:", ass);
+    console.log("Sheet 3:", loo);
   } catch (error) {
     console.error("❌ Error fetching sheets:", error);
   }
+  processData();
 }
 
 function processData() {
-  data.forEach((row, index) => {
-    let thumbURL;
-    if (
-      row.m == "PDF" ||
-      row.m == "PDFs" ||
-      row.m == "JPEG" ||
-      row.m == "JPEGs"
-    ) {
-    }
+  datas.forEach((row, index) => {
+    generateBlock(row);
   });
 }
 
@@ -70,9 +70,19 @@ function createLookup(sheet2Data) {
 }
 // get thumbnail
 function getThumbnail(row) {
-  let link = lookup[parseToObjects(row.t)[0]];
-  return { src: link.d, alt_text: link.f };
+  if (row.t == null) return null;
+  let t = parseToObjects(row.t);
+  let link = lookup[t[0].value];
+  // console.log(link.b);
+  return { src: link.d ? link.d : null, alt_text: link.f };
 }
+// function parseAssets()
+// {
+//   const parts = text.split("\n")
+//   parts.forEach((line)=>{
+
+//   });
+// }
 // parser for text
 function parseToObjects(text) {
   const lines = text.split("\n"); // works even if no \n
@@ -87,6 +97,47 @@ function parseToObjects(text) {
       }
       return { value: line };
     });
+}
+
+function generateBlock(row) {
+  console.log("do we get here");
+  let divmother = document.createElement("div");
+  let div1 = document.createElement("div");
+  let div2 = document.createElement("div");
+  let div21 = document.createElement("div");
+  let div22 = document.createElement("div");
+  let div3 = document.createElement("div");
+  //image
+  let img = document.createElement("img");
+  const temp = getThumbnail(row);
+  img.src = temp
+    ? (temp.src ??
+      "https://s3.amazonaws.com/arena_images-temp/uploads%2Fdb4c39ea-2fd3-42af-83bb-6ae6b820133a%2Fthumb-none.png")
+    : "https://s3.amazonaws.com/arena_images-temp/uploads%2Fdb4c39ea-2fd3-42af-83bb-6ae6b820133a%2Fthumb-none.png";
+
+  img.classList.add("thumbnail__img");
+  div1.appendChild(img);
+  div1.classList.add("thumbnail__container");
+  // title and tags
+  div21.innerHTML += row.a;
+  div21.classList.add("infocard__title");
+  let yeardiv = document.createElement("div");
+  yeardiv.innerHTML = row.n;
+  div22.classList.add("infocard__tags");
+  div22.appendChild(yeardiv);
+  div2.appendChild(div21);
+  div2.appendChild(div22);
+  div2.classList.add("infocard");
+  //descriptin div
+  div3.innerHTML = row.e;
+  //div mother
+  divmother.appendChild(div1);
+  divmother.appendChild(div2);
+  divmother.appendChild(div3);
+  //dd
+  divmother.className = "archivecard__container";
+
+  ele_tiger.appendChild(divmother);
 }
 
 logSheetData();

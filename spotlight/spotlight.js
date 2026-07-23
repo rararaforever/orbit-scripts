@@ -274,7 +274,7 @@ function createEmbed(url) {
   }
 }
 
-// parser for popup
+// parser for popup to html
 function parseText(text) {
   const urlRegex = /(https?:\/\/[^\s]+)/g;
   const p = document.createElement("p");
