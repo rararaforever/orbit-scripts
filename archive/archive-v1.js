@@ -50,7 +50,6 @@ async function logSheetData() {
     console.error("❌ Error fetching sheets:", error);
   }
 }
-logSheetData();
 
 function processData() {
   data.forEach((row, index) => {
@@ -60,14 +59,10 @@ function processData() {
       row.m == "PDFs" ||
       row.m == "JPEG" ||
       row.m == "JPEGs"
-    )
-      thumbURL = handlePDF(row);
-    if (row.m == "Online Video") thumbURL = hanleVid(row);
-    archivecard(row, thumbURL);
+    ) {
+    }
   });
 }
-
-//create
 
 //look up for finding the assets
 function createLookup(sheet2Data) {
@@ -93,3 +88,5 @@ function parseToObjects(text) {
       return { value: line };
     });
 }
+
+logSheetData();

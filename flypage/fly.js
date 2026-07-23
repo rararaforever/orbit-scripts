@@ -3,7 +3,7 @@ function intialize() {
   const team = [
     {
       img: "https://freight.cargo.site/t/original/i/fed4109ae842c69f706135da8fb20bb911cfc8fef6ae5641e0cda73c8bae08f5/fly1.png",
-      name: "Amir",
+      name: "Zaal",
       sound:
         "https://cdn.jsdelivr.net/gh/rararaforever/orbit-scripts@main/flypage/fly.mp3",
     },
