@@ -1,3 +1,6 @@
+:root {
+  --infocard--text: 1.3rem;
+}
 * {
   margin: 0;
   padding: 0;
@@ -5,10 +8,6 @@
 }
 *,
 html {
-  cursor:
-    url("https://freight.cargo.site/t/original/i/890f7fbcbc4fb536df840fc2f08b17f61b4b67fd8f2d78f563d18f2653c93182/cursor.png")
-      33 48,
-    auto;
 }
 body {
   /* overflow: hidden; */
@@ -16,6 +15,7 @@ body {
   /* height: 100vh; */
   background: #f5f5f5;
 }
+
 .tiger {
   display: flex;
   flex-direction: column;
@@ -28,6 +28,7 @@ body {
   padding: 2rem;
   box-shadow: 1px 1px 60px black;
   border-radius: 13px;
+  font-size: 1.8rem;
 }
 .thumbnail__container {
   width: 100%;
@@ -43,6 +44,10 @@ body {
   display: flex;
   justify-content: space-between;
   margin-bottom: 1rem;
+}
+.infocard__des {
+  line-height: 1.05;
+  font-size: var(--infocard--text);
 }
 
 @keyframes buttonFadeOut {

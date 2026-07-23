@@ -100,7 +100,6 @@ function parseToObjects(text) {
 }
 
 function generateBlock(row) {
-  console.log("do we get here");
   let divmother = document.createElement("div");
   let div1 = document.createElement("div");
   let div2 = document.createElement("div");
@@ -130,6 +129,7 @@ function generateBlock(row) {
   div2.classList.add("infocard");
   //descriptin div
   div3.innerHTML = row.e;
+  div3.className = "infocard__des";
   //div mother
   divmother.appendChild(div1);
   divmother.appendChild(div2);
