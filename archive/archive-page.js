@@ -9,6 +9,8 @@ const lookup = sessionStorage.getItem("lookup");
 
 let ele_tiger = document.querySelector(".tiger");
 
+generatePage();
+
 function generatePage() {
   let row = lookupSlug[`${slug}`];
   let divmother = document.createElement("div");
