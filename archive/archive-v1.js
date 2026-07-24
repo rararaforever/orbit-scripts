@@ -65,7 +65,7 @@ function processData() {
   document.querySelectorAll(".archivecard__container").forEach((div) => {
     div.addEventListener("click", () => {
       const slug = div.dataset.slug;
-      window.location.href = `/orbit-archivepage?slug=${encodeURIComponent(slug)}`;
+      window.location.href = `/orbit-archivepage#${slug}`;
     });
   });
 }
