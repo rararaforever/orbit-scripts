@@ -115,5 +115,19 @@ function createLookup(sheet2Data) {
 function createSlugLookup(sheetData) {
   return Object.fromEntries(sheetData.map((row) => [row.v, row]));
 }
+function parseToObjects(text) {
+  const lines = text.split("\n"); // works even if no \n
+
+  return lines
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .map((line) => {
+      if (line.includes(":")) {
+        const [key, ...rest] = line.split(":");
+        return { [key.trim()]: rest.join(":").trim() };
+      }
+      return { value: line };
+    });
+}
 
 logSheetData();
