@@ -125,13 +125,13 @@ function createImages(data) {
     div_img.appendChild(img);
     if (window.innerWidth > 700) {
       div_img.appendChild(img_btn);
-      document.getElementById("stage").appendChild(div_img);
+      document.querySelector(".main_container").appendChild(div_img);
       makeDraggable(div_img);
       makehover(div_img);
       maketrigger(img_btn);
     } else {
       div_img.classList.add("popup-trigger");
-      document.getElementById("stage").appendChild(div_img);
+      document.querySelector(".main_container").appendChild(div_img);
       maketrigger(div_img);
     }
 
@@ -139,8 +139,8 @@ function createImages(data) {
     // $(div_img).addClass(".bro");
     // console.log(img_btn);
   });
-  let temp = document.getElementById("stage");
-  document.querySelector(".main_container").appendChild(temp);
+  // let temp = document.getElementById("stage");
+  // .appendChild(temp);
 }
 
 function createPopup(data) {
