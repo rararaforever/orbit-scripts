@@ -62,6 +62,12 @@ function processData() {
   datas.forEach((row, index) => {
     generateBlock(row);
   });
+  document.querySelectorAll(".archivecard__container").forEach((div) => {
+    div.addEventListener("click", () => {
+      const slug = div.dataset.slug;
+      window.location.href = `/orbit-archivepage?slug=${encodeURIComponent(slug)}`;
+    });
+  });
 }
 
 //look up for finding the assets
@@ -136,6 +142,7 @@ function generateBlock(row) {
   divmother.appendChild(div3);
   //dd
   divmother.className = "archivecard__container";
+  divmother.dataset.slug = row.u;
 
   ele_tiger.appendChild(divmother);
 }
