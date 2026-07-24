@@ -43,8 +43,6 @@ async function logSheetData() {
   }
 }
 
-logSheetData();
-
 function openPopup(id) {
   console.log("Opening popup:", id);
 
@@ -141,6 +139,8 @@ function createImages(data) {
     // $(div_img).addClass(".bro");
     // console.log(img_btn);
   });
+  let temp = document.getElementById("stage");
+  document.querySelector(".main_container").appendChild(temp);
 }
 
 function createPopup(data) {
@@ -535,3 +535,5 @@ function createImageCarousel({ container, images = [], height = "350px" }) {
   carousel.addEventListener("mouseup", (e) => end(e.clientX));
   carousel.addEventListener("mouseleave", () => (isDown = false));
 }
+
+logSheetData();
