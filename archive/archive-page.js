@@ -107,4 +107,12 @@ function getThumbnail(row) {
   return { src: link.d ? link.d : null, alt_text: link.f };
 }
 
+function createLookup(sheet2Data) {
+  return Object.fromEntries(sheet2Data.map((row) => [row.a, row]));
+}
+//create slug lookup
+function createSlugLookup(sheetData) {
+  return Object.fromEntries(sheetData.map((row) => [row.v, row]));
+}
+
 logSheetData();
