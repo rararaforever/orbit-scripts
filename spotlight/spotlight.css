@@ -82,6 +82,7 @@
 }
 .popup-image {
   position: absolute;
+  z-index: 10;
 }
 .popup-image:hover {
   cursor: grabbing;
