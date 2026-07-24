@@ -106,3 +106,5 @@ function getThumbnail(row) {
   // console.log(link.b);
   return { src: link.d ? link.d : null, alt_text: link.f };
 }
+
+logSheetData();
