@@ -1,10 +1,10 @@
 // const params = new URLSearchParams(window.location.search);
 // const slug = params.get("slug");
 
-const slug = window.location.hash.substring(1);
+window.slug = window.location.hash.substring(1) || {};
 console.log(slug);
 
-let ele_tiger = document.querySelector(".tiger");
+window.ele_tiger = document.querySelector(".tiger") || {};
 
 window.SPREADSHEET_ID = "1y3S825F2MRgSfZnA7Ip38b0ivhYdozC0p8KDSJZSEok" || {};
 window.SHEET_TITLE = "ALL" || {};

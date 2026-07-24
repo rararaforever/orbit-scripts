@@ -12,10 +12,9 @@ window.URLA =
   `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?sheet=${SHEET_ASSETS}` ||
   {};
 window.popups = document.querySelectorAll(".popup") || {};
+window.ele_tiger = document.querySelector(".tiger") || {};
 
 let datas, ass, loo;
-
-let ele_tiger = document.querySelector(".tiger");
 
 // end of vars
 
