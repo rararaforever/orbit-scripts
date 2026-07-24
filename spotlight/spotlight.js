@@ -203,7 +203,7 @@ function createPopup(data) {
       container.appendChild(parseText(row.g));
     }
     popup.appendChild(container);
-    document.body.appendChild(popup);
+    document.querySelector(".main_container").appendChild(popup);
   });
 }
 
