@@ -139,8 +139,8 @@ function createImages(data) {
     // $(div_img).addClass(".bro");
     // console.log(img_btn);
   });
-  // let temp = document.getElementById("stage");
-  // document.querySelector(".main_container").appendChild(temp);
+  let temp = document.getElementById("stage");
+  document.querySelector(".main_container").appendChild(temp);
 }
 
 function createPopup(data) {
