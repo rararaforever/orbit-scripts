@@ -49,9 +49,14 @@ async function logSheetData() {
     ass = assets.slice(0, 100);
     loo = createLookup(ass);
     lookup = createLookup(assets);
+    lookupSlug = createSlugLookup(datas);
+
     console.log("Sheet 1:", datas);
     console.log("Sheet 2:", ass);
     console.log("Sheet 3:", loo);
+    console.log("Sheet 3:", lookupSlug);
+    sessionStorage.setItem("lookupslug", lookupSlug);
+    sessionStorage.setItem("lookup", lookup);
   } catch (error) {
     console.error("❌ Error fetching sheets:", error);
   }
@@ -74,10 +79,14 @@ function processData() {
 function createLookup(sheet2Data) {
   return Object.fromEntries(sheet2Data.map((row) => [row.a, row]));
 }
+//create slug lookup
+function createSlugLookup(sheetData) {
+  return Object.fromEntries(sheetData.map((row) => [row.v, row]));
+}
 // get thumbnail
 function getThumbnail(row) {
-  if (row.t == null) return null;
-  let t = parseToObjects(row.t);
+  if (row.u == null) return null;
+  let t = parseToObjects(row.u);
   let link = lookup[t[0].value];
   // console.log(link.b);
   return { src: link.d ? link.d : null, alt_text: link.f };
@@ -142,7 +151,7 @@ function generateBlock(row) {
   divmother.appendChild(div3);
   //dd
   divmother.className = "archivecard__container";
-  divmother.dataset.slug = row.u;
+  divmother.dataset.slug = row.v;
 
   ele_tiger.appendChild(divmother);
 }
