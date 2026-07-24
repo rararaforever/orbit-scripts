@@ -1,15 +1,60 @@
 // const params = new URLSearchParams(window.location.search);
 // const slug = params.get("slug");
-const slug = window.location.hash.substring(1);
-
-console.log(slug);
-
-const lookupSlug = sessionStorage.getItem("lookupslug");
-const lookup = sessionStorage.getItem("lookup");
 
 let ele_tiger = document.querySelector(".tiger");
 
-generatePage();
+window.SPREADSHEET_ID = "1y3S825F2MRgSfZnA7Ip38b0ivhYdozC0p8KDSJZSEok" || {};
+window.SHEET_TITLE = "ALL" || {};
+window.SHEET_ASSETS = "Assets" || {};
+window.URLD =
+  `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?sheet=${SHEET_TITLE}` ||
+  {};
+window.URLA =
+  `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?sheet=${SHEET_ASSETS}` ||
+  {};
+
+async function fetchSheet(url) {
+  const response = await fetch(url);
+  const text = await response.text();
+
+  const jsonString = text.substring(
+    text.indexOf("{"),
+    text.lastIndexOf("}") + 1,
+  );
+
+  const json = JSON.parse(jsonString);
+  return json.table.rows.map((row) => {
+    const obj = {};
+
+    for (let i = 0; i < row.c.length; i++) {
+      obj[String.fromCharCode(97 + i)] = row.c[i] ? row.c[i].v : null;
+    }
+
+    return obj;
+  });
+}
+
+// async function fetchsheet(url)
+async function logSheetData() {
+  try {
+    [data, assets] = await Promise.all([fetchSheet(URLD), fetchSheet(URLA)]);
+    datas = data.slice(0, 100);
+    ass = assets.slice(0, 100);
+    loo = createLookup(ass);
+    lookup = createLookup(assets);
+    lookupSlug = createSlugLookup(datas);
+
+    console.log("Sheet 1:", datas);
+    console.log("Sheet 2:", ass);
+    console.log("Sheet 3:", loo);
+    console.log("Sheet 3:", lookupSlug);
+    const slug = window.location.hash.substring(1);
+    console.log(slug);
+  } catch (error) {
+    console.error("❌ Error fetching sheets:", error);
+  }
+  generatePage();
+}
 
 function generatePage() {
   let row = lookupSlug[`${slug}`];
