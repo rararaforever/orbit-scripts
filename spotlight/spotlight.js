@@ -69,6 +69,7 @@ function closePopup(id) {
 
 function createImages(data) {
   let images = [];
+  const page = document.querySelector('[data-container="page"]');
 
   const SIZE = 300;
   let zIndexCounter = 1;
@@ -125,13 +126,16 @@ function createImages(data) {
     div_img.appendChild(img);
     if (window.innerWidth > 700) {
       div_img.appendChild(img_btn);
-      document.querySelector(".main_container").appendChild(div_img);
+
+      // document.querySelector(".main_container").appendChild(div_img);
+      page.appendChild(div_img);
       makeDraggable(div_img);
       makehover(div_img);
       maketrigger(img_btn);
     } else {
       div_img.classList.add("popup-trigger");
-      document.querySelector(".main_container").appendChild(div_img);
+      // document.querySelector(".main_container").appendChild(div_img);
+      page.appendChild(div_img);
       maketrigger(div_img);
     }
 
@@ -144,6 +148,7 @@ function createImages(data) {
 }
 
 function createPopup(data) {
+  const page = document.querySelector('[data-container="page"]');
   data.forEach((row) => {
     const popup = document.createElement("div");
     popup.className = "popup";
@@ -203,7 +208,8 @@ function createPopup(data) {
       container.appendChild(parseText(row.g));
     }
     popup.appendChild(container);
-    document.querySelector(".main_container").appendChild(popup);
+    // document.querySelector(".main_container").appendChild(popup);
+    page.appendChild(popup);
   });
 }
 
