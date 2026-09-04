@@ -1,7 +1,15 @@
 CLIENT_SECRET = "BFfk3o2Pn4mgUV06vnk9sZQRBQ4Q7-aqmma7MJ6lPxw";
 CLIENT_ID = "PQP6tEWH8EtgYFIl5EIluYy1L0QQoB_RqPXZ8ItIfJQ";
+audiothumb =
+  "https://freight.cargo.site/t/original/i/a751fe153c4e1585493966c661701b0c6802a23afe8abb963af17b8188b50621/audio-icon.png";
+vimeothumb =
+  "https://freight.cargo.site/t/original/i/973f26b39d768e6fe9e2a5d7367d12f820261f9bb50485c1db391256d622f71e/passwordProtected-icon.png";
+pdfthumb =
+  "https://freight.cargo.site/t/original/i/1b86a597f22415c80c2c48238abac1a373cd76954e374223b44735c8d2323733/PDF-icon.png";
 function myFunction() {
+  Logger.log("1. myFunction started");
   processSheetAsync();
+  Logger.log("2. processSheetAsync called");
 }
 function getArenaService() {
   return OAuth2.createService("Arena")
@@ -87,13 +95,14 @@ function fetchArenaBlock(blockId, service) {
 }
 
 function getOrCreateAssetSheet() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const gg = SpreadsheetApp.getActiveSpreadsheet();
+  let assetSheet = gg.getSheetByName("Assets");
 
-  let sheet = ss.getSheetByName("Assets");
-
-  if (!sheet) {
-    sheet = ss.insertSheet("Assets");
-    sheet.appendRow([
+  if (!assetSheet) {
+    assetSheet = gg.insertSheet("Assets");
+    gg.setActiveSheet(assetSheet);
+    gg.moveActiveSheet(gg.getSheets().length);
+    assetSheet.appendRow([
       "id",
       "title",
       "src",
@@ -103,7 +112,7 @@ function getOrCreateAssetSheet() {
     ]);
   }
 
-  return sheet;
+  return assetSheet;
 }
 
 function upsertAsset(sheet, row) {
@@ -147,44 +156,44 @@ function SLUG(input) {
   return slugify(input);
 }
 
-// async function getVimeoThumbnail(url) {
-//   const response = UrlFetchApp.fetch(
-//     `https://vimeo.com/api/oembed.json?url=${encodeURIComponent(url)}`,
-//   );
-
-//   const data = JSON.parse(response.getContentText());
-//   return data.thumbnail_url;
-// }
 async function getVimeoThumbnail(url) {
   try {
     const response = UrlFetchApp.fetch(
       `https://vimeo.com/api/oembed.json?url=${encodeURIComponent(url)}`,
       { muteHttpExceptions: true },
     );
-
     const code = response.getResponseCode();
 
     if (code !== 200) {
-      return null;
+      return vimeothumb;
     }
 
     const data = JSON.parse(response.getContentText());
-    return data.thumbnail_url || null;
+    Logger.log("Vimeo API response: " + data);
+    return data.thumbnail_url ? data.thumbnail_url : vimeothumb; // Return the thumbnail URL or a default thumbnail if not available
   } catch (error) {
-    return null;
+    return vimeothumb;
   }
 }
 
 //done with helpers
-
 async function processSheetAsync() {
+  Logger.log("3. processSheetAsync started");
   await processSheet();
+  Logger.log("4. processSheet finished");
 }
 
 async function processSheet() {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  const assetSheet = getOrCreateAssetSheet();
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  Logger.log("5. processSheet started");
+  const sheet = ss.getSheetByName("ALL");
+  if (!sheet) {
+    throw new Error('Sheet "Projects" not found.');
+  } else {
+    Logger.log('Sheet "Projects" found.');
+  }
 
+  const assetSheet = getOrCreateAssetSheet();
   const service = getArenaService();
 
   const data = sheet.getDataRange().getValues();
@@ -208,7 +217,11 @@ async function processSheet() {
         " videoIds" +
         videoIds,
     );
-    if (blockIds.length === 0 && videoIds === null) continue;
+    if (blockIds.length === 0 && videoIds === null) {
+      Logger.log("No Arena or video links found in row " + (i + 1));
+      continue;
+    }
+
     // its video
     else if (videoIds != null) {
       const assetId = "asset_" + `${videoIds.platform}_` + videoIds.id;
@@ -221,6 +234,8 @@ async function processSheet() {
         "",
         "",
       ];
+      Logger.log("upserting asset: " + assetId);
+      Logger.log("upserting asset: " + row.thumbnail);
       upsertAsset(assetSheet, row);
       updatedCell = assetId;
     }
@@ -238,6 +253,13 @@ async function processSheet() {
         else urlsrc = block.image?.src ?? block.attachment?.url ?? "";
 
         urlthumb = block.image?.src ?? "";
+        //things
+        if (block.attachment)
+        {
+        if (block.attachment.contentType == "audio/mpeg") urlthumb = audiothumb;
+        else if (block.attachment.contentType == "application/pdf" && !urlthumb)
+          urlthumb = pdfthumb;
+      } 
 
         const row = [
           assetId,
@@ -247,7 +269,7 @@ async function processSheet() {
           block.description ? block.description.plain : "",
           extractAltText(block),
         ];
-
+        Logger.log("upserting asset: " + assetId);
         upsertAsset(assetSheet, row);
 
         // Replace URL in main sheet with asset ID

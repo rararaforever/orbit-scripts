@@ -7,6 +7,12 @@ window.URLL =
   {};
 window.popups = document.querySelectorAll(".popup") || {};
 
+// ————————————————————————————————————————————————————————————
+// ————————————————————————————————————————————————————————————
+// ,,for adding in cargo
+// const page = document.querySelector('[data-container="page"]');
+// ————————————————————————————————————————————————————————————
+// ————————————————————————————————————————————————————————————
 async function logSheetData() {
   try {
     const response = await fetch(URLL);

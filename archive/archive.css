@@ -50,6 +50,50 @@ body {
   font-size: var(--infocard--text);
 }
 
+/* filter stuff */
+#filter__container {
+  display: flex;
+  gap: 2rem;
+  position: fixed;
+  background: white;
+  right: 0;
+  flex-direction: column;
+}
+.filtermenu__items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  height: 40vh;
+  overflow: scroll;
+}
+.filtermenu__title {
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: row;
+  gap: 0.8rem;
+}
+.droptriangle {
+  padding-top: 3px;
+  font-size: 0.8rem;
+}
+
+.filtermenu__item.active {
+  background-color: black;
+  color: white;
+}
+
+/* hover */
+.filtermenu__item:hover {
+  background-color: black;
+  color: white;
+}
+.filtermenu__container {
+  display: flex;
+  gap: 5rem;
+  background: white;
+  right: 0;
+}
+
 @keyframes buttonFadeOut {
   /* animate button out */
   0% {
