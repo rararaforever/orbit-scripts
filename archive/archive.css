@@ -55,9 +55,10 @@ body {
   display: flex;
   gap: 2rem;
   position: fixed;
-  background: white;
+  background: #ff9d2e;
   right: 0;
   flex-direction: column;
+  font-size: 1rem;
 }
 .filtermenu__items {
   display: flex;
@@ -90,7 +91,7 @@ body {
 .filtermenu__container {
   display: flex;
   gap: 5rem;
-  background: white;
+  /* background: white; */
   right: 0;
 }
 
