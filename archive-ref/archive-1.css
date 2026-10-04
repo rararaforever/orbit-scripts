@@ -1,0 +1,229 @@
+:root {
+  --infocard--text: 1.3rem;
+}
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+*,
+html {
+}
+body {
+  /* overflow: hidden; */
+  /* width: 100vw; */
+  /* height: 100vh; */
+  background: #f5f5f5;
+}
+
+.tiger {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  flex-direction: column;
+  gap: 4rem;
+}
+
+/* archive element */
+.archivecard__container {
+  max-width: 50vw;
+  padding: 2rem;
+  box-shadow: 1px 1px 60px black;
+  border-radius: 13px;
+  font-size: 1.8rem;
+}
+.thumbnail__container {
+  width: 100%;
+}
+.thumbnail__img {
+  width: 100%;
+}
+.infocard__tags {
+}
+.infocard__title {
+}
+.infocard {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+.infocard__des {
+  line-height: 1.05;
+  font-size: var(--infocard--text);
+}
+
+/* filter stuff */
+.filter--parent {
+  width: 100vw;
+  /* height: 100%; */
+  display: flex;
+  position: fixed;
+  justify-content: center;
+  top: 0;
+}
+.filter__clps.active {
+  transform: rotate(0deg);
+}
+.filter__clps {
+  transform: rotate(180deg);
+  background: #000000;
+  color: white;
+  padding: 0.2rem 0.5rem 0 0.5rem;
+  font-size: 1rem;
+  /* border: 0px solid black; */
+  border: none;
+  border-radius: 50%;
+}
+#filter__container {
+  display: flex;
+  gap: 2rem;
+  position: relative;
+  background: #ff9d2e;
+  /* right: 0; */
+  flex-direction: column;
+  font-size: 1rem;
+  z-index: 100000;
+  border-radius: 20px;
+  border: 1px solid black;
+  padding: 2rem 2rem 0.5rem 2rem;
+  margin: auto;
+}
+.filtermenu__items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  height: 40vh;
+  overflow: scroll;
+}
+.filtermenu__title {
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: row;
+  gap: 0.8rem;
+  font-style: italic;
+}
+.droptriangle {
+  padding-top: 3px;
+  font-size: 0.8rem;
+}
+/* -------------------------------------------
+,, filter menu active and zero
+//-------------------------------------------*/
+.filtermenu__item.active {
+  background-color: black;
+  color: white;
+}
+.filtermenu__item.zero {
+  color: rgb(139 139 139);
+}
+
+/* hover */
+.filtermenu__item:hover {
+  background-color: black;
+  color: white;
+}
+.filtermenu--container.active {
+  display: flex;
+  gap: 5rem;
+  /* background: white; */
+  right: 0;
+}
+.filtermenu--container {
+  display: none;
+}
+@keyframes buttonFadeOut {
+  /* animate button out */
+  0% {
+    opacity: 1;
+    display: block;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    display: none;
+    transform: scale(0);
+  }
+}
+/* -------------------------------------------
+__ filter stuff
+//,,-------------------------------------------*/
+.filter__count {
+  position: absolute;
+}
+.filter__search {
+  display: flex;
+  justify-content: center;
+}
+
+/* -------------------------------------------
+__ views stuff
+//,,-------------------------------------------*/
+.viewbtn--container {
+  display: flex;
+  width: 100%;
+  gap: -0.5rem;
+  flex-direction: row;
+  gap: 2rem;
+  justify-content: center;
+}
+.viewmenu--container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+.view__btn {
+  font-size: 1.3rem;
+  font-size: 1.3rem;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  border: none;
+  font-size: 1.1rem;
+  min-width: 2.5rem;
+}
+.view__btn.active {
+  background-color: orange;
+  box-shadow: 0px 0px 2px black;
+  border: 1px solid black;
+}
+.view__btn:nth-child(4n + 3),
+.view__btn:nth-child(4n) {
+  font-size: 1rem;
+}
+/* -------------------------------------------
+__ pagination
+//,,-------------------------------------------*/
+.pagination--container {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 1rem;
+}
+.pagination {
+  display: flex;
+  gap: 1rem;
+  padding: 0 1rem;
+  background: orange;
+}
+.pagination__previous {
+}
+.pagination__next {
+}
+.pagination__page {
+  font-size: 1.2rem;
+}
+
+/* -------------------------------------------
+__ scroll shit
+//,,-------------------------------------------*/
+.filtermenu--container::webkit-scrollbar,
+.filtermenu__item::webkit-scrollbar {
+  display: none;
+}
+.filtermneu--container,
+.filtermenu__items {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

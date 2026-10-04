@@ -81,10 +81,15 @@ body {
   padding-top: 3px;
   font-size: 0.8rem;
 }
-
+/* -------------------------------------------
+,, filter menu active and zero
+//-------------------------------------------*/
 .filtermenu__item.active {
   background-color: black;
   color: white;
+}
+.filtermenu__item.zero {
+  color: rgb(139 139 139);
 }
 
 /* hover */

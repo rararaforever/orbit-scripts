@@ -1,9 +1,16 @@
-// ————————————————————————————————————————————————————————————
-// ————————————————————————————————————————————————————————————
-// '' all the vars
-// ————————————————————————————————————————————————————————————
-// ————————————————————————————————————————————————————————————
+// import {} from "./";
+/* -------------------------------------------
+to do:
+[] add open and expand for the filters
+[] set offest hieight of filters to top margin of cards
 
+//,.-------------------------------------------*/
+
+// ————————————————————————————————————————————————————————————
+// ————————————————————————————————————————————————————————————
+//  all the vars
+// ————————————————————————————————————————————————————————————
+// ,,————————————————————————————————————————————————————————————
 window.data = window.data || {};
 window.assets = window.assets || {};
 window.lookup = window.lookup || {};
@@ -20,7 +27,6 @@ window.URLA =
 window.popups = document.querySelectorAll(".popup") || {};
 window.ele_tiger = document.querySelector(".tiger") || {};
 
-window.datas = window.datas || {};
 window.filterItems = window.filterItems || {};
 window.filterM = window.filterM || {};
 window.filterP = window.filterP || {};
@@ -32,7 +38,7 @@ window.selectedCategories = window.selectedCategories || {
 };
 window.cardsHolder = window.cardsHolder || [];
 window.cardsContainer = window.cardsContainer || [];
-
+// rows and stuff
 window.filterCols = window.filterCols || [
   { col: "i", name: "medium" },
   { col: "j", name: "programme" },
@@ -55,7 +61,8 @@ window.searchCols = window.searchCols || [
 ];
 let idRow = "u";
 let slugRow = "v";
-const selectedFilters = {
+// rows to show on the cards
+let selectedFilters = {
   medium: [],
   programme: [],
   tags: [],
@@ -72,40 +79,39 @@ let facetedFilters = {
   country: [],
 };
 let searchQuery = "";
-
-// fix this!
-let datas, ass, loo;
-
+let projectPerPage = 50;
+const archive = {
+  entries: [],
+  currentPage: 1,
+  perPage: 50,
+  searchQuery: "",
+  filters: selectedFilters,
+};
 // ————————————————————————————————————————————————————————————
 // ————————————————————————————————————————————————————————————
-// '' start
+// init
 // ————————————————————————————————————————————————————————————
-// ————————————————————————————————————————————————————————————
+// ,,————————————————————————————————————————————————————————————
 logSheetData();
 // async function fetchsheet(url)
 async function logSheetData() {
   try {
+    // fetch data for URL for data and assets
     [data, assets] = await Promise.all([fetchSheet(URLD), fetchSheet(URLA)]);
-    // datas = data.slice(0, 100);
-    // ass = assets.slice(0, 100);
-    datas = data;
-    ass = assets;
-    loo = createLookup(ass);
     lookup = createLookup(assets);
-    lookupSlug = createSlugLookup(datas);
-
-    console.log("Sheet 1:", datas);
-    console.log("Sheet 2:", ass);
-    console.log("Sheet 3:", loo);
-    console.log("Sheet 3:", lookupSlug);
-    sessionStorage.setItem("lookupslug", lookupSlug);
-    sessionStorage.setItem("lookup", lookup);
+    lookupSlug = createSlugLookup(data);
+    console.log("Sheet 1:", data);
+    console.log("Sheet 2:", assets);
+    console.log("Sheet 3:", lookup);
+    // initElemenets();
   } catch (error) {
     console.error("❌ Error fetching sheets:", error);
   }
+  initFilters();
+  console.log("Filteritems", filterItems);
+  generateFilters();
+  // create the card container?
   createBlocks();
-  createFilters();
-  generateFilter();
   filterEvents();
   searchEvents();
   console.log("cardsContainer:", cardsContainer);
@@ -113,11 +119,18 @@ async function logSheetData() {
   console.log("searchCols", searchCols);
   console.log("Filteritems", filterItems);
 }
-
+/* -------------------------------------------
+__
+//,,-------------------------------------------*/
+function initElements() {
+  initFilters();
+  generateFilters();
+}
 function createBlocks() {
-  datas.forEach((row, index) => {
+  data.forEach((row, index) => {
     generateBlock(row);
   });
+  //handle event of clicking on the card => nav to next page
   document.querySelectorAll(".archivecard__container").forEach((div) => {
     div.addEventListener("click", () => {
       const slug = div.dataset.slug;
@@ -136,26 +149,17 @@ async function fetchSheet(url) {
   const json = JSON.parse(jsonString);
   return json.table.rows.map((row) => {
     const obj = {};
-
     for (let i = 0; i < row.c.length; i++) {
       obj[String.fromCharCode(97 + i)] = row.c[i] ? row.c[i].v : null;
     }
-
     return obj;
   });
 }
 
-//look up for finding the assets
-function createLookup(sheet2Data) {
-  return Object.fromEntries(sheet2Data.map((row) => [row.a, row]));
-}
-//create slug lookup
-function createSlugLookup(sheetData) {
-  return Object.fromEntries(sheetData.map((row) => [row.v, row]));
-}
-
-// create filters arrays
-function createFilters() {
+/* -------------------------------------------
+__ filters 
+//,,-------------------------------------------*/
+function initFilters() {
   filterItems = [];
   filterCols.forEach((c) => {
     filterItems.push({
@@ -165,11 +169,10 @@ function createFilters() {
     });
   });
 }
-
 function getallfilters(row) {
   return [
     ...new Set(
-      datas.flatMap(
+      data.flatMap(
         (item) =>
           String(item[row])
             ?.split(",")
@@ -179,83 +182,75 @@ function getallfilters(row) {
     ),
   ].sort();
 }
-
-function generateFilter() {
-  const pounce = createFromHTML(`
+function generateFilters() {
+  //generate the filters
+  let allFilters = filterItems
+    .map((f, index) => {
+      const itemsHTML = f.data
+        .map(
+          (item) =>
+            /* HTML */ ` <div
+              class="filtermenu__item ${f.id}"
+              data-group="${f.group}"
+              data-value="${item.trim()}"
+            >
+              ${item}
+            </div>`,
+        )
+        .join("");
+      const fly = /* HTML */ `
+        <div class="filtermenu" id="${f.id}">
+          <div class="filtermenu__title">${filterCols[index].name}</div>
+          <div class="filtermenu__items">${itemsHTML}</div>
+        </div>
+      `;
+      return fly;
+    })
+    .join("");
+  // genereate the element
+  const filterTemp = createHTMLfragment(/* HTML */ `
     <div class="filter__search">
-    <input id="searchInput" type="text">
-    <button id="searchButton">Search</button> 
+      <input id="searchInput" type="text" />
+      <button id="searchButton">Search</button>
     </div>
-    `);
-
-  document.getElementById("filter__container").append(pounce);
-  almost = createFromHTML(`<div class="filtermenu__container"><div>`);
-  filterItems.forEach((f, index) => {
-    const itemsHTML = f.data
-      .map(
-        (item) => `
-    <div class="filtermenu__item ${f.id}" data-group="${f.group}" data-value="${item.trim()}">
-    ${item}
-  </div>`,
-      )
-      .join("");
-    const fly = createFromHTML(` 
-  <div class="filtermenu" id="${f.id}">
-    <div class="filtermenu__title">
-    ${filterCols[index].name} <div class="droptriangle">▼</div>
+    <div class="filtermenu--container">${allFilters}</div>
+    <div class="viewmenu--container">
+      <div class="view__title">view toggles</div>
+      <div class="viewbtn--container">
+        <button class="view__btn">░</button>
+        <button class="view__btn">▤</button>
+        <button class="view__btn">fun1</button>
+        <button class="view__btn">fun2</button>
+      </div>
+      <div class="viewoptions--container"></div>
     </div>
-    <div class="filtermenu__items">
-    ${itemsHTML}
-    </div>
-  </div>
-`);
-    almost.append(fly);
-  });
-  document.getElementById("filter__container").append(almost);
+  `);
+  document.querySelector(".filter--container").append(filterTemp);
 }
-
 // generating the block for archive entry
 function generateBlock(row) {
-  let divmother = document.createElement("div");
-  let div1 = document.createElement("div");
-  let div2 = document.createElement("div");
-  let div21 = document.createElement("div");
-  let div22 = document.createElement("div");
-  let div3 = document.createElement("div");
-  //image
-  let img = document.createElement("img");
   const temp = getThumbnail(row);
-  img.src = temp
+  let imgSource = temp
     ? (temp.src ??
       "https://s3.amazonaws.com/arena_images-temp/uploads%2Fdb4c39ea-2fd3-42af-83bb-6ae6b820133a%2Fthumb-none.png")
     : "https://s3.amazonaws.com/arena_images-temp/uploads%2Fdb4c39ea-2fd3-42af-83bb-6ae6b820133a%2Fthumb-none.png";
-
-  img.classList.add("thumbnail__img");
-  div1.appendChild(img);
-  div1.classList.add("thumbnail__container");
-  // title and tags
-  div21.innerHTML += row.a;
-  div21.classList.add("infocard__title");
-  let yeardiv = document.createElement("div");
-  yeardiv.innerHTML = row.n;
-  div22.classList.add("infocard__tags");
-  div22.appendChild(yeardiv);
-  div2.appendChild(div21);
-  div2.appendChild(div22);
-  div2.classList.add("infocard");
-  //descriptin div
-  div3.innerHTML = row.e;
-  div3.className = "infocard__des";
-  //div mother
-  divmother.appendChild(div1);
-  divmother.appendChild(div2);
-  divmother.appendChild(div3);
-  //dd
-  divmother.className = "archivecard__container";
-  divmother.dataset.slug = row.v;
-
-  // make the cards container for filtering
+  let divmother = createFromHTML(
+    /* HTML */
+    `<div
+      class="archivecard__container"
+      data-title="${row.a}"
+      data-slug="${row.v}"
+    >
+      <div class="thumbnail__container" src="${imgSource}"></div>
+      <div class="infocard">
+        <div class="infocard__title">${row.a}</div>
+        <div class="infocard__tags">${row.n}</div>
+      </div>
+      <div class="infocard__des">${row.e}</div>
+    </div>`,
+  );
   let tempcard = {
+    title: row.a,
     el: divmother,
     filters: {},
     searchs: {},
@@ -268,23 +263,13 @@ function generateBlock(row) {
     tempcard.searchs[c.name] = row[c.col] ? String(row[c.col]) : "null";
   });
   cardsContainer.push(tempcard);
-
   //append the element
   ele_tiger.appendChild(divmother);
 }
-//function to generate from html
-function createFromHTML(html) {
-  const template = document.createElement("template");
-  template.innerHTML = html.trim();
-  return template.content.firstElementChild;
-}
 
-// ————————————————————————————————————————————————————————————
-// ————————————————————————————————————————————————————————————
-// '' Search
-// ————————————————————————————————————————————————————————————
-// ————————————————————————————————————————————————————————————
-
+/* -------------------------------------------
+__ search
+//,,-------------------------------------------*/
 function searchEvents() {
   const searchInput = document.querySelector("#searchInput");
   const searchButton = document.querySelector("#searchButton");
@@ -298,7 +283,6 @@ function searchEvents() {
 
   searchButton.addEventListener("click", () => {
     searchQuery = searchInput.value.toLowerCase();
-
     updateCards();
   });
   document.addEventListener("keydown", (event) => {
@@ -330,8 +314,6 @@ function matchesSearch(card, searchQuery) {
 // ————————————————————————————————————————————————————————————
 function filterEvents() {
   const filters = document.querySelectorAll(".filtermenu__item");
-  const cards = document.querySelectorAll(".archivecard__container");
-
   filters.forEach((filter) => {
     filter.addEventListener("click", (e) => {
       restoreF();
@@ -369,7 +351,8 @@ function filterEvents() {
                 value != null
               ) {
                 facetedFilters[group].push(value);
-                console.log(value);
+                console.log(card);
+                console.log(group + " adnd value:" + value);
               }
             });
         });
@@ -385,11 +368,9 @@ function filterEvents() {
     });
   }
 }
-// ————————————————————————————————————————————————————————————
-// ————————————————————————————————————————————————————————————
-// ''updating cards and filters
-// ————————————————————————————————————————————————————————————
-// ————————————————————————————————————————————————————————————
+/* -------------------------------------------
+__ updating cards and shit
+//,,-------------------------------------------*/
 function updateCards() {
   //entry counter to 0
   document.querySelector(".filter__count").innerHTML = 0;
@@ -404,12 +385,14 @@ function updateCards() {
     const matchesSea = matchesSearch(card, searchQuery);
     matches && matchesSea
       ? ((card.el.style.display = ""), (card.visible = true))
-      : (card.el.style.display = "none");
+      : ((card.el.style.display = "none"), (card.visible = false));
     // card.el.style.display = matches ? "" : "none";
     matches && matchesSea
       ? document.querySelector(".filter__count").innerHTML++
       : null;
   });
+  b = cardsContainer.filter((c) => c.visible);
+  console.log(b);
 }
 
 // check card filters
@@ -443,7 +426,6 @@ function getThumbnail(row) {
 // partTobojects for the thing
 function parseToObjects(text) {
   const lines = text.split("\n"); // works even if no \n
-
   return lines
     .map((line) => line.trim())
     .filter((line) => line.length > 0)
@@ -464,4 +446,28 @@ function restoreF() {
     language: [],
     country: [],
   };
+  console.log(facetedFilters);
+}
+/* -------------------------------------------
+__ helpers
+//,,-------------------------------------------*/
+//look up for finding the assets
+function createLookup(sheet2Data) {
+  return Object.fromEntries(sheet2Data.map((row) => [row.a, row]));
+}
+//create slug lookup
+function createSlugLookup(sheetData) {
+  return Object.fromEntries(sheetData.map((row) => [row.v, row]));
+}
+//html helpers
+function createFromHTML(html) {
+  const template = document.createElement("template");
+  template.innerHTML = html.trim();
+  return template.content.firstElementChild;
+}
+
+function createHTMLfragment(html) {
+  const template = document.createElement("template");
+  template.innerHTML = html.trim();
+  return template.content;
 }
