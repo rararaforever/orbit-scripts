@@ -1,5 +1,21 @@
+/* -------------------------------------------
+__ all the vars
+//,,-------------------------------------------*/
 :root {
+  --active--filter--columns: 0;
   --infocard--text: 1.3rem;
+  /* spacings */
+  --gap--Normal--elements: 0.2rem;
+  --gap--grid--filtermenu: 2rem;
+  --gap--filterToggles: 0.5rem;
+
+  /* margins */
+  --margin--Normal--elements: 1rem;
+
+  /* paddings */
+  --padding--searchBar: 1.5rem;
+  /* colours */
+  --colour--button-active: orange;
 }
 * {
   margin: 0;
@@ -8,6 +24,7 @@
 }
 *,
 html {
+  /* font-size: 62.5%; */
 }
 body {
   /* overflow: hidden; */
@@ -51,7 +68,75 @@ body {
   font-size: var(--infocard--text);
 }
 
-/* filter stuff */
+/* -------------------------------------------
+__ search bar stuff
+//,,-------------------------------------------*/
+.filter__search {
+  display: flex;
+  justify-content: center;
+  position: relative;
+}
+.filter__search--container {
+  position: relative;
+  min-width: 30%;
+  width: fit-content;
+}
+#searchInput {
+  padding: 0.1rem 0 0.1rem var(--padding--searchBar);
+  width: 100%;
+  border-radius: 1rem;
+}
+.search-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+#search {
+  width: 200px;
+  padding: 8px 30px 8px 8px;
+  border: none;
+  outline: none;
+  background: transparent;
+  font: inherit;
+}
+
+/* Hint when not focused */
+#search::placeholder {
+  opacity: 1;
+  color: #888;
+  transition: opacity 0.2s ease;
+}
+
+/* Hide hint when focused */
+#search:focus::placeholder {
+  opacity: 0;
+}
+/* Search icon */
+.search-icon {
+  position: absolute;
+  left: 0.1rem;
+  width: auto;
+  height: 100%;
+  opacity: 1;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.search-icon svg {
+  width: 100%;
+  height: 100%;
+  stroke: black;
+  stroke-width: 1.5;
+}
+
+/* Show icon when focused */
+.search-container:focus-within .search-icon {
+  opacity: 1;
+}
+
+/* -------------------------------------------
+__ filter menu stuff 
+//,,-------------------------------------------*/
 .filter--parent {
   width: 100vw;
   /* height: 100%; */
@@ -60,6 +145,26 @@ body {
   justify-content: center;
   top: 0;
 }
+.filter--parent > * {
+  display: flex;
+  flex-direction: row;
+}
+.filtermenu--container.active {
+  display: grid;
+  grid-template-columns: repeat(var(--active-columns), minmax(0, 1fr));
+  /* background: white; */
+}
+.filtermenu--container {
+  display: none;
+}
+.filtermenu {
+  padding: 0 2rem 0 0;
+  display: none;
+}
+.filtermenu.active {
+  display: block;
+}
+
 .filter__clps.active {
   transform: rotate(0deg);
 }
@@ -73,9 +178,13 @@ body {
   border: none;
   border-radius: 50%;
 }
+.filter__clps--container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
 #filter__container {
   display: flex;
-  gap: 2rem;
   position: relative;
   background: #ff9d2e;
   /* right: 0; */
@@ -86,6 +195,7 @@ body {
   border: 1px solid black;
   padding: 2rem 2rem 0.5rem 2rem;
   margin: auto;
+  width: 75vw;
 }
 .filtermenu__items {
   display: flex;
@@ -105,6 +215,47 @@ body {
   padding-top: 3px;
   font-size: 0.8rem;
 }
+.filter--container > * {
+  margin-bottom: var(--margin--Normal--elements);
+}
+.filter__toggles--container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--gap--Normal--elements);
+  margin-bottom: var(--margin--Normal--elements);
+}
+.filter__toggles {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--gap--filterToggles);
+}
+.filter__toggles--btn {
+  padding: 0.1rem 0.8rem;
+  border-radius: 1rem;
+}
+.filter__toggles--btn.active {
+  background: var(--colour--button-active);
+}
+.filters--parent {
+  display: none;
+}
+.filters--parent.active {
+  display: block;
+}
+.filter__pages--container {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+}
+.filter__page {
+}
+.filter__page:hover {
+  text-transform: uppercase;
+  text-decoration: underline;
+  cursor: pointer;
+}
 /* -------------------------------------------
 ,, filter menu active and zero
 //-------------------------------------------*/
@@ -121,15 +272,7 @@ body {
   background-color: black;
   color: white;
 }
-.filtermenu--container.active {
-  display: flex;
-  gap: 5rem;
-  /* background: white; */
-  right: 0;
-}
-.filtermenu--container {
-  display: none;
-}
+
 @keyframes buttonFadeOut {
   /* animate button out */
   0% {
@@ -148,10 +291,10 @@ __ filter stuff
 //,,-------------------------------------------*/
 .filter__count {
   position: absolute;
+  left: 2rem;
 }
-.filter__search {
-  display: flex;
-  justify-content: center;
+
+#filterCount {
 }
 
 /* -------------------------------------------
@@ -213,6 +356,10 @@ __ pagination
 }
 .pagination__page {
   font-size: 1.2rem;
+}
+.pagination__page.active {
+  background: black;
+  color: white;
 }
 
 /* -------------------------------------------

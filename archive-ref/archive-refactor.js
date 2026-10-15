@@ -1,8 +1,9 @@
 // import {} from "./";
 /* -------------------------------------------
 to do:
-[] add open and expand for the filters
-[] set offest hieight of filters to top margin of cards
+
+
+
 
 //,.-------------------------------------------*/
 
@@ -95,6 +96,7 @@ let facetedFilters = {
 };
 let searchQuery = "";
 let projectPerPage = 50;
+let activeFilterCountToggle = 0;
 // const archive = {
 //  entries : [],
 //  currentPage:1,
@@ -150,13 +152,6 @@ async function logSheetData() {
   } catch (error) {
     console.error("❌ Error fetching sheets:", error);
   }
-  // initFilters();
-  // console.log("Filteritems", filterItems);
-  // generateFilters();
-  // // create the card container?
-  // createBlocks();
-  // filterEvents();
-  // searchEvents();
   console.log("cardsContainer:", cardsContainer);
   console.log("filterCols", filterCols);
   console.log("searchCols", searchCols);
@@ -164,8 +159,6 @@ async function logSheetData() {
 }
 
 function initArchive() {
-  //make the projects!
-  //filter
   initFilters();
   archive.searchInput = document.querySelector("#searchInput");
   archive.projects = prepProjects();
@@ -173,7 +166,6 @@ function initArchive() {
   setupEvents();
   renderArchive();
 }
-
 function prepProjects() {
   return data.map((row) => {
     let tempcard = {
@@ -199,34 +191,13 @@ function prepProjects() {
     return tempcard;
   });
 }
-function getThumbnail(row) {
-  if (row[idRow] == null)
-    return {
-      src: noImageThumbnail,
-      alt_text: null,
-    };
-  let t = parseToObjects(row[idRow]);
-  let link = lookup[t[0].value];
-  if (link == null) {
-    console.log("No asset found for id: " + t[0].value);
-    return {
-      src: noImageThumbnail,
-      alt_text: null,
-    };
-  } else {
-    return { src: link.d ? link.d : null, alt_text: link.f };
-  }
-}
-
 // ============================================================
 // MAIN RENDER
 // ============================================================
-
 function renderArchive() {
   // ----------------------------------------------------------
   // 1. FILTER
   // ----------------------------------------------------------
-
   const filteredProjects = getFilteredProjects();
   updateCounter(filteredProjects.length);
   // ----------------------------------------------------------
@@ -243,23 +214,18 @@ function renderArchive() {
   } else if (archive.currentPage > totalPages) {
     archive.currentPage = totalPages;
   }
-
   // ----------------------------------------------------------
   // 3. GET CURRENT PAGE
   // ----------------------------------------------------------
 
   const pageProjects = getCurrentPage(filteredProjects);
-
   // ----------------------------------------------------------
   // 4. RENDER CARDS
   // ----------------------------------------------------------
-
   renderCards(pageProjects);
-
   // ----------------------------------------------------------
   // 5. RENDER PAGINATION
   // ----------------------------------------------------------
-
   renderPagination(totalPages);
 }
 
@@ -281,7 +247,7 @@ function getFilteredProjects() {
 // FILTER MATCHING
 // ============================================================
 function updateCounter(n) {
-  const temp = document.querySelector(".filter__count");
+  const temp = document.querySelector("#filterCount");
   temp.innerHTML = `${n}`;
 }
 function updateFaceted(card) {
@@ -333,7 +299,6 @@ function getCurrentPage(projects) {
 // ============================================================
 // RENDER CARDS
 // ============================================================
-
 function renderCards(projects) {
   // Remove the old page
   archive.container.replaceChildren();
@@ -360,7 +325,6 @@ function createCard(project) {
   card.className = "archivecard__container";
   card.dataset.slug = project.slug;
   card.dataset.title = project.title;
-
   card.innerHTML = /* HTML */ `
     <div class="thumbnail__container">
       ${project.thumbnail
@@ -483,6 +447,7 @@ function setupEvents() {
   const filterContainer = document.querySelector(".filter--container");
   filterContainer.addEventListener("click", (event) => {
     const filterBtn = event.target.closest(".filtermenu__item");
+    // filterBtn to update the archive cards
     if (filterBtn) {
       event.preventDefault();
       restoreF();
@@ -495,36 +460,42 @@ function setupEvents() {
         );
       } else archive.filters[filterGroup].push(filterCat);
       filterBtn.classList.toggle("active");
-      //updatecards
       renderArchive();
       updateFilterZero();
-      //updatesecondyview
+    }
+    // filter menus toggles
+    const filterToggleBtn = event.target.closest(".filter__toggles--btn");
+    if (filterToggleBtn) {
+      const group = filterToggleBtn.dataset.group;
+      const menu = document.querySelector(`.filtermenu[data-group="${group}"]`);
+      menu.classList.toggle("active");
+      filterToggleBtn.classList.toggle("active");
+      if (menu.classList.contains("active")) activeFilterCountToggle++;
+      else activeFilterCountToggle--;
+      setColumns(activeFilterCountToggle);
     }
   });
-
   /* -------------------------------------------
-__ dang
+__ slider thing
 //,,-------------------------------------------*/
+  // const slider = document.querySelector("#gridSlider");
+  // slider.addEventListener("input", () => {
+  //   const tiger = document.querySelector(".tiger");
+  //   const gridValue = document.querySelector("#gridValue");
+  //   const columns = slider.value;
 
-  const slider = document.querySelector("#gridSlider");
-  slider.addEventListener("input", () => {
-    const tiger = document.querySelector(".tiger");
-    const gridValue = document.querySelector("#gridValue");
-    const columns = slider.value;
-
-    tiger.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
-    gridValue.textContent = columns;
-  });
+  //   tiger.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
+  //   gridValue.textContent = columns;
+  // });
   /* -------------------------------------------
   __ collapse
   //,,-------------------------------------------*/
   const collapseBtn = document.querySelector(".filter__clps");
   collapseBtn.addEventListener("click", (event) => {
-    temp = document.querySelector(".filtermenu--container");
+    temp = document.querySelector(".filters--parent");
     temp.classList.toggle("active");
     event.target.classList.toggle("active");
   });
-
   // ----------------------------------------------------------
   // PAGINATION CLICK
   //
@@ -541,13 +512,11 @@ __ dang
 
       return;
     }
-
     const actionButton = event.target.closest("[data-page-action]");
 
     if (!actionButton) {
       return;
     }
-
     const action = actionButton.dataset.pageAction;
 
     if (action === "previous") {
@@ -576,7 +545,6 @@ __ dang
     });
   }
 }
-
 // ============================================================
 // FILTER API
 // ============================================================
@@ -596,36 +564,27 @@ function setFilter(group, value, active) {
   if (!archive.filters[group]) {
     archive.filters[group] = new Set();
   }
-
   const values = archive.filters[group];
-
   if (active) {
     values.add(value);
   } else {
     values.delete(value);
   }
-
   // ----------------------------------------------------------
   // Remove empty filter groups
   // ----------------------------------------------------------
-
   if (values.size === 0) {
     delete archive.filters[group];
   }
-
   // ----------------------------------------------------------
   // ALWAYS return to page 1 after filtering
   // ----------------------------------------------------------
-
   archive.currentPage = 1;
-
   renderArchive();
 }
-
 // ============================================================
 // CLEAR ALL FILTERS
 // ============================================================
-
 function clearFilters() {
   archive.filters = {};
 
@@ -633,19 +592,17 @@ function clearFilters() {
 
   renderArchive();
 }
-
 // ============================================================
 // CHANGE ITEMS PER PAGE
 // ============================================================
-
+//usefull
 function setPerPage(amount) {
   archive.perPage = amount;
   archive.currentPage = 1;
   renderArchive();
 }
-
 /* -------------------------------------------
-__ filters init
+__ filters init and generate
 //,,-------------------------------------------*/
 function initFilters() {
   filterItems = [];
@@ -688,7 +645,7 @@ function generateFilters() {
         )
         .join("");
       const fly = /* HTML */ `
-        <div class="filtermenu" id="${f.id}">
+        <div class="filtermenu" data-group="${f.group}">
           <div class="filtermenu__title">${filterCols[index].name}</div>
           <div class="filtermenu__items">${itemsHTML}</div>
         </div>
@@ -696,44 +653,70 @@ function generateFilters() {
       return fly;
     })
     .join("");
+  let filterToggles = filterItems
+    .map((f) => {
+      const toggle = /* HTML */ `<button
+        class="filter__toggles--btn"
+        data-group="${f.group}"
+      >
+        ${f.group}
+      </button>`;
+      return toggle;
+    })
+    .join("");
   // genereate the element
   const filterTemp = createHTMLfragment(/* HTML */ `
-    <div class="filter__search">
-      <input id="searchInput" type="text" />
-      <button id="searchButton">Search</button>
+    <div class="filter__pages--container">
+      <div class="filter__page">About Archive</div>
+      <div class="filter__page">How To Navigate</div>
     </div>
-    <div class="filtermenu--container active">${allFilters}</div>
-    <div class="viewmenu--container">
-      <div class="view__title">view toggles</div>
-      <div class="viewbtn--container">
-        <button class="view__btn active">░</button>
-        <button class="view__btn">▤</button>
-        <button class="view__btn">fun1</button>
-        <button class="view__btn">fun2</button>
+    <div class="filter__search">
+      <div class="filter__count">
+        Entries Available: <span id="filterCount">0</span>
       </div>
-      <div class="viewoptions--container">
-        <label for="gridSlider">Columns: <span id="gridValue">1</span></label>
-        <input
-          id="gridSlider"
-          type="range"
-          min="1"
-          max="5"
-          value="1"
-          step="1"
-        />
+      <div class="filter__search--container">
+        <input id="searchInput" type="text" placeholder="Search..." />
+        <span class="search-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <circle cx="10.5" cy="10.5" r="6.5"></circle>
+            <path d="M15.5 15.5L21 21"></path>
+          </svg>
+        </span>
       </div>
-      <div class="filter__clps--container">
-        <button class="filter__clps active">⌃</button>
+    </div>
+    <div class="filters--parent active">
+      <div class="filter__toggles--container">
+        <span>Filter By:</span>
+        <div class="filter__toggles">${filterToggles}</div>
       </div>
+      <div class="filtermenu--container active">${allFilters}</div>
+    </div>
+    <div class="filter__clps--container">
+      <button class="filter__clps">⌃</button>
     </div>
   `);
   document.querySelector(".filter--container").append(filterTemp);
 }
 
+createFromHTML(/* HTML */ `
+  <div class="viewmenu--container">
+    <div class="view__title">view toggles</div>
+    <div class="viewbtn--container">
+      <button class="view__btn active">░</button>
+      <button class="view__btn">▤</button>
+      <button class="view__btn">fun1</button>
+      <button class="view__btn">fun2</button>
+    </div>
+    <div class="viewoptions--container">
+      <label for="gridSlider">Columns: <span id="gridValue">1</span></label>
+      <input id="gridSlider" type="range" min="1" max="5" value="1" step="1" />
+    </div>
+  </div>
+`);
 /* -------------------------------------------
 __ helpers
-//,,-------------------------------------------*/
 
+//,,-------------------------------------------*/
 async function fetchSheet(url) {
   const response = await fetch(url);
   const text = await response.text();
@@ -764,11 +747,28 @@ function createFromHTML(html) {
   template.innerHTML = html.trim();
   return template.content.firstElementChild;
 }
-
 function createHTMLfragment(html) {
   const template = document.createElement("template");
   template.innerHTML = html.trim();
   return template.content;
+}
+function getThumbnail(row) {
+  if (row[idRow] == null)
+    return {
+      src: noImageThumbnail,
+      alt_text: null,
+    };
+  let t = parseToObjects(row[idRow]);
+  let link = lookup[t[0].value];
+  if (link == null) {
+    console.log("No asset found for id: " + t[0].value);
+    return {
+      src: noImageThumbnail,
+      alt_text: null,
+    };
+  } else {
+    return { src: link.d ? link.d : null, alt_text: link.f };
+  }
 }
 function parseToObjects(text) {
   const lines = text.split("\n"); // works even if no \n
@@ -793,4 +793,16 @@ function restoreF() {
     country: [],
   };
   console.log(facetedFilters);
+}
+// event for updating the window width?
+function updateWindowWidth() {
+  window.addEventListener("resize", () => {
+    windowWidth = window.innerWidth;
+  });
+}
+
+function setColumns(count) {
+  const grid = document.querySelector(".filtermenu--container.active");
+  grid.style.setProperty("--active-columns", count);
+  grid.style.justifyItems = count === 1 ? "start" : "center";
 }
