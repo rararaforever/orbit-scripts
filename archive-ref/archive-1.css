@@ -273,9 +273,13 @@ __ filter menu stuff
 }
 
 /* hover */
-.filtermenu__item:hover {
-  background-color: black;
+.filtermenu__item:not(.zero):hover {
+  background-color: gray;
   color: white;
+}
+
+.filtermenu__item.active:hover {
+  background-color: black;
 }
 
 @keyframes buttonFadeOut {
@@ -300,6 +304,10 @@ __ filter stuff
 }
 
 #filterCount {
+  color: white;
+  padding: 0.2rem;
+  background: black;
+  border-radius: 100%;
 }
 
 /* -------------------------------------------

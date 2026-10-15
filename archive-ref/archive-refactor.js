@@ -597,10 +597,10 @@ function setFilter(group, value, active) {
 // ============================================================
 function clearFilters() {
   archive.filters = {};
-
   archive.currentPage = 1;
 
   renderArchive();
+  updateFilterZero();
 }
 // ============================================================
 // CHANGE ITEMS PER PAGE
