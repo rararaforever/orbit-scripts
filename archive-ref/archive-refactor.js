@@ -460,6 +460,13 @@ function setupEvents() {
         );
       } else archive.filters[filterGroup].push(filterCat);
       filterBtn.classList.toggle("active");
+      let tempFilterBtn = document.querySelector(
+        `.filter__toggles--btn[data-group="${filterGroup}"]`,
+      );
+      if (archive.filters[filterGroup].length != 0)
+        tempFilterBtn.classList.add("selected");
+      else tempFilterBtn.classList.remove("selected");
+      console.log(archive);
       renderArchive();
       updateFilterZero();
     }
@@ -468,11 +475,14 @@ function setupEvents() {
     if (filterToggleBtn) {
       const group = filterToggleBtn.dataset.group;
       const menu = document.querySelector(`.filtermenu[data-group="${group}"]`);
-      menu.classList.toggle("active");
-      filterToggleBtn.classList.toggle("active");
-      if (menu.classList.contains("active")) activeFilterCountToggle++;
-      else activeFilterCountToggle--;
-      setColumns(activeFilterCountToggle);
+      if (!filterToggleBtn.classList.contains("selected")) {
+        menu.classList.toggle("active");
+        filterToggleBtn.classList.toggle("active");
+        if (menu.classList.contains("active")) activeFilterCountToggle++;
+        else activeFilterCountToggle--;
+        //for the css
+        setColumns(activeFilterCountToggle);
+      }
     }
   });
   /* -------------------------------------------
@@ -792,7 +802,6 @@ function restoreF() {
     language: [],
     country: [],
   };
-  console.log(facetedFilters);
 }
 // event for updating the window width?
 function updateWindowWidth() {

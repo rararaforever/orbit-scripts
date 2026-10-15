@@ -183,7 +183,7 @@ __ filter menu stuff
   flex-direction: column;
   align-items: center;
 }
-#filter__container {
+.filter--container {
   display: flex;
   position: relative;
   background: #ff9d2e;
@@ -195,7 +195,8 @@ __ filter menu stuff
   border: 1px solid black;
   padding: 2rem 2rem 0.5rem 2rem;
   margin: auto;
-  width: 75vw;
+  min-width: 50vw;
+  max-width: 75vw;
 }
 .filtermenu__items {
   display: flex;
@@ -215,7 +216,7 @@ __ filter menu stuff
   padding-top: 3px;
   font-size: 0.8rem;
 }
-.filter--container > * {
+.filter--container > *:not(:last-child) {
   margin-bottom: var(--margin--Normal--elements);
 }
 .filter__toggles--container {
@@ -237,6 +238,10 @@ __ filter menu stuff
 }
 .filter__toggles--btn.active {
   background: var(--colour--button-active);
+}
+.filter__toggles--btn.active.selected {
+  background: black;
+  color: white;
 }
 .filters--parent {
   display: none;
@@ -291,7 +296,7 @@ __ filter stuff
 //,,-------------------------------------------*/
 .filter__count {
   position: absolute;
-  left: 2rem;
+  left: 0;
 }
 
 #filterCount {
