@@ -581,7 +581,7 @@ function setupEvents() {
   });
   // keydown
   filterContainer.addEventListener("keydown", (event) => {
-    if (event.key !== "Enter") return;
+    if (event.key !== "Enter" && event.key !== "Escape") return;
     const filterBtn = event.target.closest("#searchInput");
     if (!filterBtn) return;
     event.preventDefault();
