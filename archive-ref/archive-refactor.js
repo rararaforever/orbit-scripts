@@ -75,6 +75,7 @@ window.cardCols = window.cardCols || [
   { col: "n", name: "year" },
   { col: "p", name: "tags" },
 ];
+window.activeFilters = window.activeFilters || [];
 let idRow = "u";
 let slugRow = "v";
 // rows to show on the cards
@@ -200,6 +201,8 @@ function renderArchive() {
   // ----------------------------------------------------------
   const filteredProjects = getFilteredProjects();
   updateCounter(filteredProjects.length);
+  console.log(archive);
+  updateFilterActive(archive.filters);
   // ----------------------------------------------------------
   // 2. CALCULATE PAGINATION
   // ----------------------------------------------------------
@@ -246,6 +249,50 @@ function getFilteredProjects() {
 // ============================================================
 // FILTER MATCHING
 // ============================================================
+function updateFilterActive(filters) {
+  let b = document.querySelector(".filter__actives");
+  b.innerHTML = "";
+  // const Ftemp = Object.values(filters)
+  //   .filter((arr) => arr.length > 0)
+  //   .map((group) =>
+  //     group.forEach(
+  //       (f) => /*HTML */ `
+  //     <div class="filter__actives--container">
+  //     ${f}
+  //     </div>
+  //     `,
+  //     ),
+  //   )
+  //   .join("");
+  if (activeFilters.length > 0) {
+    const Ftemp = activeFilters
+      .map(
+        (f) => /*HTML */ `
+      <div class="filter__actives__item">
+      ${f}
+      </div> 
+      `,
+      )
+      .join("");
+    console.log(Ftemp);
+    b.append(createHTMLfragment(Ftemp));
+  }
+}
+/* -------------------------------------------
+__ update helpers
+//,,-------------------------------------------*/
+function toggleFilterSearch() {
+  temp = document.querySelector(".filter--parent");
+  temp2 = document.querySelector(".filter__clps");
+  temp.classList.toggle("active");
+  temp2.classList.toggle("active");
+}
+function activeFilterSearch() {
+  temp = document.querySelector(".filter--parent");
+  temp2 = document.querySelector(".filter__clps");
+  temp.classList.add("active");
+  temp2.classList.add("active");
+}
 function updateCounter(n) {
   const temp = document.querySelector("#filterCount");
   temp.innerHTML = `${n}`;
@@ -443,7 +490,13 @@ function setupEvents() {
     window.location.href = `/orbit-archivepage#${slug}`;
   });
 
+  //deactive backdrop + the thing
+
   // filters shit
+  /* -------------------------------------------
+  __ all the filter containers
+  //,,-------------------------------------------*/
+
   const filterContainer = document.querySelector(".filter--container");
   filterContainer.addEventListener("click", (event) => {
     const filterBtn = event.target.closest(".filtermenu__item");
@@ -458,14 +511,18 @@ function setupEvents() {
         archive.filters[filterGroup] = archive.filters[filterGroup].filter(
           (item) => item !== filterCat,
         );
-      } else archive.filters[filterGroup].push(filterCat);
+        activeFilters = activeFilters.filter((b) => b != filterCat);
+      } else {
+        archive.filters[filterGroup].push(filterCat);
+        activeFilters.push(filterCat);
+      }
       filterBtn.classList.toggle("active");
-      let tempFilterBtn = document.querySelector(
-        `.filter__toggles--btn[data-group="${filterGroup}"]`,
-      );
-      if (archive.filters[filterGroup].length != 0)
-        tempFilterBtn.classList.add("selected");
-      else tempFilterBtn.classList.remove("selected");
+      // let tempFilterBtn = document.querySelector(
+      //   `.filter__toggles--btn[data-group="${filterGroup}"]`,
+      // );
+      // if (archive.filters[filterGroup].length != 0)
+      //   tempFilterBtn.classList.add("selected");
+      // else tempFilterBtn.classList.remove("selected");
       console.log(archive);
       renderArchive();
       updateFilterZero();
@@ -484,28 +541,61 @@ function setupEvents() {
         setColumns(activeFilterCountToggle);
       }
     }
+    /* -------------------------------------------
+    __ filtergroup collapsing
+    //,,-------------------------------------------*/
+    const filterGroup = event.target.closest(".filtermenu__group--btn");
+    if (filterGroup) {
+      console.log("b");
+      const group = filterGroup.dataset.group;
+      const tri = filterGroup.querySelector(".tri");
+      const filterMenu = document.querySelector(
+        `.filtermenu__items[data-group="${group}"]`,
+      );
+      filterMenu.classList.toggle("active");
+      filterGroup.classList.toggle("active");
+      filterGroup.classList.contains("active")
+        ? (tri.innerHTML = "▲")
+        : (tri.innerHTML = "▼");
+    }
+    const filterClpsBtn = event.target.closest(".filter__clps");
+    if (filterClpsBtn) {
+      toggleFilterSearch();
+      // temp = document.querySelector(".filter--parent");
+      // temp.classList.toggle("active");
+      // filterClpsBtn.classList.toggle("active");
+    }
   });
+  // fcosu
+  filterContainer.addEventListener("focusin", (event) => {
+    const filterBtn = event.target.closest("#searchInput");
+    // If the focused element isn't part of a filter button, stop
+    if (!filterBtn) return;
+    // Do what you want when the button gets focus
+    activeFilterSearch();
+  });
+
   /* -------------------------------------------
 __ slider thing
 //,,-------------------------------------------*/
-  // const slider = document.querySelector("#gridSlider");
-  // slider.addEventListener("input", () => {
-  //   const tiger = document.querySelector(".tiger");
-  //   const gridValue = document.querySelector("#gridValue");
-  //   const columns = slider.value;
+  const slider = document.querySelector("#gridSlider");
 
-  //   tiger.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
-  //   gridValue.textContent = columns;
-  // });
+  slider.addEventListener("input", () => {
+    const tiger = document.querySelector(".tiger");
+    const gridValue = document.querySelector("#gridValue");
+    const columns = slider.value;
+
+    tiger.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
+    gridValue.textContent = columns;
+  });
+  /* -------------------------------------------
+__ 
+//,,-------------------------------------------*/
+
   /* -------------------------------------------
   __ collapse
   //,,-------------------------------------------*/
-  const collapseBtn = document.querySelector(".filter__clps");
-  collapseBtn.addEventListener("click", (event) => {
-    temp = document.querySelector(".filters--parent");
-    temp.classList.toggle("active");
-    event.target.classList.toggle("active");
-  });
+
   // ----------------------------------------------------------
   // PAGINATION CLICK
   //
@@ -656,8 +746,16 @@ function generateFilters() {
         .join("");
       const fly = /* HTML */ `
         <div class="filtermenu" data-group="${f.group}">
-          <div class="filtermenu__title">${filterCols[index].name}</div>
-          <div class="filtermenu__items">${itemsHTML}</div>
+          <div class="filtermenu--container">
+            <div>
+              <button class="filtermenu__group--btn" data-group="${f.group}">
+                ${filterCols[index].name}<span class="tri">▼</span>
+              </button>
+            </div>
+            <div class="filtermenu__items" data-group="${f.group}">
+              ${itemsHTML}
+            </div>
+          </div>
         </div>
       `;
       return fly;
@@ -676,33 +774,33 @@ function generateFilters() {
     .join("");
   // genereate the element
   const filterTemp = createHTMLfragment(/* HTML */ `
-    <div class="filter__pages--container">
-      <div class="filter__page">About Archive</div>
-      <div class="filter__page">How To Navigate</div>
-    </div>
-    <div class="filter__search">
-      <div class="filter__count">
-        Entries Available: <span id="filterCount">0</span>
-      </div>
-      <div class="filter__search--container">
-        <input id="searchInput" type="text" placeholder="Search..." />
-        <span class="search-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none">
-            <circle cx="10.5" cy="10.5" r="6.5"></circle>
-            <path d="M15.5 15.5L21 21"></path>
-          </svg>
-        </span>
-      </div>
-    </div>
-    <div class="filters--parent active">
-      <div class="filter__toggles--container">
-        <span>Filter By:</span>
-        <div class="filter__toggles">${filterToggles}</div>
-      </div>
-      <div class="filtermenu--container active">${allFilters}</div>
-    </div>
     <div class="filter__clps--container">
-      <button class="filter__clps">⌃</button>
+      <button class="filter__clps">open search and filters</button>
+    </div>
+    <div class="filter__grid">
+      <div class="filter__count">
+        <div>Entries Available based on search query and active filters:</div>
+        <span id="filterCount">0</span>
+      </div>
+      <div class="filter__search">
+        <div>Search Query</div>
+        <div class="filter__search--container">
+          <input id="searchInput" type="text" placeholder="Search..." />
+          <span class="search-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <circle cx="10.5" cy="10.5" r="6.5"></circle>
+              <path d="M15.5 15.5L21 21"></path>
+            </svg>
+          </span>
+        </div>
+      </div>
+      <div class="filters--parent active">
+        <div class="filter__actives--container">
+          <nav>Filter By</nav>
+          <div class="filter__actives"></div>
+        </div>
+        <div class="filtermenu--container active">${allFilters}</div>
+      </div>
     </div>
   `);
   document.querySelector(".filter--container").append(filterTemp);
@@ -812,6 +910,6 @@ function updateWindowWidth() {
 
 function setColumns(count) {
   const grid = document.querySelector(".filtermenu--container.active");
-  grid.style.setProperty("--active-columns", count);
-  grid.style.justifyItems = count === 1 ? "start" : "center";
+  // grid.style.setProperty("--active-columns", count);
+  // grid.style.justifyItems = count === 1 ? "start" : "center";
 }

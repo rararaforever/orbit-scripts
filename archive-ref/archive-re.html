@@ -151,12 +151,36 @@
     <link rel="stylesheet" href="./archive-1.css" />
   </head>
   <body>
+    <div></div>
     <div class="filter--parent">
       <div class="filter--container" id="filter__container"></div>
+      <div class="filter__backdrop"></div>
     </div>
     <div class="tiger"></div>
     <div class="pagination--container">
       <div class="pagination"></div>
+      <div class="viewmenu--container">
+        <div class="view__title">view toggles</div>
+        <div class="viewbtn--container">
+          <div class="viewoptions--container">
+            <label for="gridSlider"
+              >Columns: <span id="gridValue">1</span></label
+            >
+            <input
+              id="gridSlider"
+              type="range"
+              min="1"
+              max="5"
+              value="1"
+              step="1"
+            />
+          </div>
+          <button class="view__btn active">░</button>
+          <button class="view__btn">▤</button>
+          <button class="view__btn">fun1</button>
+          <button class="view__btn">fun2</button>
+        </div>
+      </div>
     </div>
   </body>
   <!-- <script src="./archive-v2.js"></script> -->

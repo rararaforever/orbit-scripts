@@ -13,9 +13,11 @@ __ all the vars
   --margin--Normal--elements: 1rem;
 
   /* paddings */
-  --padding--searchBar: 1.5rem;
+  --padding--searchBar: 2rem;
   /* colours */
   --colour--button-active: orange;
+  /* animation */
+  --animation--time: 0.6s;
 }
 * {
   margin: 0;
@@ -72,17 +74,21 @@ body {
 __ search bar stuff
 //,,-------------------------------------------*/
 .filter__search {
+  gap: 0.5rem;
   display: flex;
-  justify-content: center;
   position: relative;
+  flex-direction: column;
+  align-items: center;
 }
 .filter__search--container {
   position: relative;
-  min-width: 30%;
-  width: fit-content;
+  /* min-width: 30%; */
+  width: 100%;
+  /* width: fit-content; */
+  height: max-content;
 }
 #searchInput {
-  padding: 0.1rem 0 0.1rem var(--padding--searchBar);
+  padding: 0.3rem 0 0.3rem var(--padding--searchBar);
   width: 100%;
   border-radius: 1rem;
 }
@@ -137,6 +143,11 @@ __ search bar stuff
 /* -------------------------------------------
 __ filter menu stuff 
 //,,-------------------------------------------*/
+
+/* -------------------------------------------
+__ filter menu active
+//,,-------------------------------------------*/
+
 .filter--parent {
   width: 100vw;
   /* height: 100%; */
@@ -144,39 +155,99 @@ __ filter menu stuff
   position: fixed;
   justify-content: center;
   top: 0;
+  z-index: 10;
+  transition: all var(--animation--time) ease-in-out;
 }
+.filter--parent .filter__count {
+  flex-direction: row;
+  align-items: flex-start;
+}
+.filter--parent .filtermenu--container {
+  display: none;
+}
+.filter--parent .filter__backdrop {
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0 ease-in-out;
+}
+/* active states */
+.filter--parent.active {
+  top: 10%;
+}
+.filter--parent.active .filter--container {
+  width: 85vw;
+}
+.filter--parent.active .filtermenu--container {
+  display: flex;
+}
+.filter--parent.active .filter__count {
+  flex-direction: column;
+  align-items: center;
+}
+.filter--parent.active .filtermenu--container {
+  display: grid;
+  grid-template-rows: repeat(var(--active-columns), minmax(0, 1fr));
+  gap: 1rem;
+  max-height: 70vh;
+  overflow: scroll;
+}
+.filter--parent.active .filter__grid {
+  grid-template-columns: 0.25fr 1fr 1fr;
+  gap: 1rem;
+}
+.filter--parent.active .filter__backdrop {
+  width: 100vw;
+  height: 100vh;
+  opacity: 1;
+}
+
 .filter--parent > * {
   display: flex;
   flex-direction: row;
 }
-.filtermenu--container.active {
+/* .filtermenu--container.active {
   display: grid;
-  grid-template-columns: repeat(var(--active-columns), minmax(0, 1fr));
-  /* background: white; */
-}
+  grid-template-rows: repeat(var(--active-columns), minmax(0, 1fr));
+  gap: 1rem;
+  max-height: 70vh;
+  overflow: scroll;
+  /* background: white; 
+} */
 .filtermenu--container {
   display: none;
 }
 .filtermenu {
-  padding: 0 2rem 0 0;
-  display: none;
+  /* padding: 0 2rem 0 0; */
+  display: block;
+  /* flex-direction: row; */
+  gap: 0.5rem;
+  grid-auto-flow: column;
+  /* grid-template-columns: 0.4fr 1fr; */
+  padding-bottom: 1rem;
+  border-bottom: 1px solid black;
 }
 .filtermenu.active {
-  display: block;
+  display: grid;
+  flex-direction: row;
+  gap: 0.5rem;
+  grid-auto-flow: column;
+  grid-template-columns: 0.4fr 1fr;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid black;
 }
 
 .filter__clps.active {
   transform: rotate(0deg);
 }
 .filter__clps {
-  transform: rotate(180deg);
-  background: #000000;
   color: white;
-  padding: 0.2rem 0.5rem 0 0.5rem;
+  padding: 0.2rem 1.2rem;
   font-size: 1rem;
-  /* border: 0px solid black; */
   border: none;
-  border-radius: 50%;
+  border-radius: 0.6rem;
+  background: #611500;
 }
 .filter__clps--container {
   display: flex;
@@ -191,26 +262,70 @@ __ filter menu stuff
   flex-direction: column;
   font-size: 1rem;
   z-index: 100000;
-  border-radius: 20px;
-  border: 1px solid black;
-  padding: 2rem 2rem 0.5rem 2rem;
+  border-radius: 10px;
+  border: 0.3px solid black;
   margin: auto;
-  min-width: 50vw;
-  max-width: 75vw;
+  padding: 0.5rem 1rem 1.5rem 1rem;
+  width: 50vw;
+  transition: all var(--animation--time) ease-in-out;
+}
+.filter--parent.active {
+  top: 10%;
+}
+.filter__count {
+  flex-direction: row;
+}
+.filter--parent.active {
+}
+.filter__search--container::before {
+  content: "";
+  margin-left: var(--padding--searchBar);
+  margin-top: 0.3rem;
+  position: absolute;
+}
+/* //// */
+
+.filter--container.active {
+  width: 85vw;
+}
+.filter__grid {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  transition: all var(--animation--time) ease-in-out;
+}
+
+.filter__grid > * {
+  padding: 1rem;
+  border: 1px solid black;
+  border-radius: 1rem;
 }
 .filtermenu__items {
-  display: flex;
+  display: none;
   flex-direction: column;
   gap: 0.5rem;
-  height: 40vh;
+  height: 30vh;
   overflow: scroll;
 }
-.filtermenu__title {
+.filtermenu__items.active {
+  display: flex;
+}
+.filtermenu--container {
   margin-bottom: 1rem;
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   gap: 0.8rem;
+}
+.filtermenu__group--btn {
+  background: none;
+  border: none;
   font-style: italic;
+  font-family: serif;
+  font-size: 1rem;
+}
+.fitlermenu__group--btn span {
+  font-style: normal;
 }
 .droptriangle {
   padding-top: 3px;
@@ -248,6 +363,8 @@ __ filter menu stuff
 }
 .filters--parent.active {
   display: block;
+  max-height: 70vh;
+  overflow: scroll;
 }
 .filter__pages--container {
   display: flex;
@@ -261,6 +378,40 @@ __ filter menu stuff
   text-decoration: underline;
   cursor: pointer;
 }
+.filter__backdrop {
+  position: fixed;
+  width: 100vw;
+  height: 100vh;
+  top: 0;
+  z-index: 9;
+  background: #ff9d2eab;
+  backdrop-filter: blur(6px);
+}
+.filter__backdrop.active {
+}
+/* -------------------------------------------
+__ filter actives
+//,,-------------------------------------------*/
+.filter__actives--container {
+  /* margin-bottom: 1.5rem; */
+}
+.filter__actives--container nav {
+  width: 100%;
+  text-align: center;
+}
+.filter__actives {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.filter__actives {
+}
+.filter__actives__item {
+  line-height: 1;
+  padding: 0.2rem 0.5rem;
+  background: #ff7e00;
+  border-radius: 0.5rem;
+}
 /* -------------------------------------------
 ,, filter menu active and zero
 //-------------------------------------------*/
@@ -269,7 +420,7 @@ __ filter menu stuff
   color: white;
 }
 .filtermenu__item.zero {
-  color: rgb(139 139 139);
+  color: rgb(174 174 174 / 58%);
 }
 
 /* hover */
@@ -299,8 +450,11 @@ __ filter menu stuff
 __ filter stuff
 //,,-------------------------------------------*/
 .filter__count {
-  position: absolute;
-  left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  line-height: 1.1;
 }
 
 #filterCount {
@@ -308,6 +462,7 @@ __ filter stuff
   padding: 0.2rem;
   background: black;
   border-radius: 100%;
+  font-size: 1.8rem;
 }
 
 /* -------------------------------------------
@@ -320,20 +475,23 @@ __ views stuff
   flex-direction: row;
   gap: 2rem;
   justify-content: center;
+  height: 100%;
+  background: orange;
+  padding: 0 1rem;
+  align-items: center;
 }
 .viewmenu--container {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0;
+  height: 100%;
+  z-index: 2;
 }
 .view__btn {
-  font-size: 1.3rem;
-  font-size: 1.3rem;
   padding: 0.5rem;
   border-radius: 0.5rem;
   border: none;
-  font-size: 1.1rem;
   min-width: 2.5rem;
 }
 .view__btn.active {
@@ -345,6 +503,11 @@ __ views stuff
 .view__btn:nth-child(4n) {
   font-size: 1rem;
 }
+.viewoptions--container {
+}
+.view__title {
+  line-height: 1;
+}
 /* -------------------------------------------
 __ pagination
 //,,-------------------------------------------*/
@@ -354,8 +517,10 @@ __ pagination
   width: 100%;
   display: flex;
   flex-direction: row;
-  justify-content: center;
+  justify-content: space-around;
   gap: 1rem;
+  align-items: flex-end;
+  height: 35px;
 }
 .pagination {
   display: flex;
@@ -368,11 +533,15 @@ __ pagination
 .pagination__next {
 }
 .pagination__page {
-  font-size: 1.2rem;
+  font-size: 1rem;
+  border-radius: 100%;
+  padding: 0.2rem;
+  min-width: 10px;
 }
 .pagination__page.active {
   background: black;
   color: white;
+  border: none;
 }
 
 /* -------------------------------------------
