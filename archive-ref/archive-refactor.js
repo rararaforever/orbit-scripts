@@ -79,7 +79,7 @@ window.activeFilters = window.activeFilters || [];
 let idRow = "u";
 let slugRow = "v";
 // rows to show on the cards
-let selectedFilters = {
+const selectedFilters = {
   medium: [],
   programme: [],
   tags: [],
@@ -494,7 +494,7 @@ function setupEvents() {
 
   // filters shit
   /* -------------------------------------------
-  __ all the filter containers
+  __ all the filter-events
   //,,-------------------------------------------*/
 
   const filterContainer = document.querySelector(".filter--container");
@@ -565,6 +565,11 @@ function setupEvents() {
       // temp.classList.toggle("active");
       // filterClpsBtn.classList.toggle("active");
     }
+    /* -------------------------------------------
+    __ filter clear
+    //,,-------------------------------------------*/
+    const filterClear = event.target.closest(".filter__clear");
+    if (filterClear) clearFilters();
   });
   // fcosu
   filterContainer.addEventListener("focusin", (event) => {
@@ -573,6 +578,15 @@ function setupEvents() {
     if (!filterBtn) return;
     // Do what you want when the button gets focus
     activeFilterSearch();
+  });
+  // keydown
+  filterContainer.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter") return;
+    const filterBtn = event.target.closest("#searchInput");
+    if (!filterBtn) return;
+    event.preventDefault();
+    toggleFilterSearch();
+    filterBtn.blur();
   });
 
   /* -------------------------------------------
@@ -686,9 +700,10 @@ function setFilter(group, value, active) {
 // CLEAR ALL FILTERS
 // ============================================================
 function clearFilters() {
-  archive.filters = {};
+  archive.search = "";
   archive.currentPage = 1;
-
+  restoreFilters();
+  restoreF();
   renderArchive();
   updateFilterZero();
 }
@@ -775,7 +790,13 @@ function generateFilters() {
   // genereate the element
   const filterTemp = createHTMLfragment(/* HTML */ `
     <div class="filter__clps--container">
-      <button class="filter__clps">open search and filters</button>
+      <button class="filter__clps">
+        <span>⤡</span>Open Search & Filter Bar
+      </button>
+
+      <button class="filter__clear">
+        <span>⌫</span> clear search and filters
+      </button>
     </div>
     <div class="filter__grid">
       <div class="filter__count">
@@ -785,7 +806,13 @@ function generateFilters() {
       <div class="filter__search">
         <div>Search Query</div>
         <div class="filter__search--container">
-          <input id="searchInput" type="text" placeholder="Search..." />
+          <input
+            id="searchInput"
+            type="text"
+            placeholder="Search..."
+            autocomplete="off"
+          />
+
           <span class="search-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none">
               <circle cx="10.5" cy="10.5" r="6.5"></circle>
@@ -794,6 +821,7 @@ function generateFilters() {
           </span>
         </div>
       </div>
+
       <div class="filters--parent active">
         <div class="filter__actives--container">
           <nav>Filter By</nav>
@@ -890,6 +918,19 @@ function parseToObjects(text) {
       }
       return { value: line };
     });
+}
+function restoreFilters() {
+  archive.filters = {
+    medium: [],
+    programme: [],
+    tags: [],
+    year: [],
+    language: [],
+    country: [],
+  };
+  activeFilters = [];
+  tempC = document.querySelectorAll(".filtermenu__item");
+  tempC.forEach((c) => c.classList.remove("active"));
 }
 function restoreF() {
   facetedFilters = {
