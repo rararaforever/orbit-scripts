@@ -98,6 +98,8 @@ let facetedFilters = {
 let searchQuery = "";
 let projectPerPage = 50;
 let activeFilterCountToggle = 0;
+let expandSign = "⤡";
+let closeSign = "x";
 // const archive = {
 //  entries : [],
 //  currentPage:1,
@@ -166,6 +168,7 @@ function initArchive() {
   console.log(archive);
   setupEvents();
   renderArchive();
+  updateTigerPadding();
 }
 function prepProjects() {
   return data.map((row) => {
@@ -202,6 +205,7 @@ function renderArchive() {
   const filteredProjects = getFilteredProjects();
   updateCounter(filteredProjects.length);
   console.log(archive);
+  //updtae filter
   updateFilterActive(archive.filters);
   // ----------------------------------------------------------
   // 2. CALCULATE PAGINATION
@@ -230,6 +234,9 @@ function renderArchive() {
   // 5. RENDER PAGINATION
   // ----------------------------------------------------------
   renderPagination(totalPages);
+  /* -------------------------------------------
+  __ 6.
+  //,,-------------------------------------------*/
 }
 
 // ============================================================
@@ -252,46 +259,50 @@ function getFilteredProjects() {
 function updateFilterActive(filters) {
   let b = document.querySelector(".filter__actives");
   b.innerHTML = "";
-  // const Ftemp = Object.values(filters)
-  //   .filter((arr) => arr.length > 0)
-  //   .map((group) =>
-  //     group.forEach(
-  //       (f) => /*HTML */ `
-  //     <div class="filter__actives--container">
-  //     ${f}
-  //     </div>
-  //     `,
-  //     ),
-  //   )
-  //   .join("");
-  if (activeFilters.length > 0) {
-    const Ftemp = activeFilters
-      .map(
-        (f) => /*HTML */ `
-      <div class="filter__actives__item">
-      ${f}
-      </div> 
+  const Ftemp = Object.entries(filters)
+    .map(([group, values]) =>
+      values
+        .map(
+          (f) => /*HTML */ `
+      <button class="filter__actives__item" data-group="${group}" data-filter="${f}">
+      <span>×</span>${f}
+      </button> 
       `,
-      )
-      .join("");
-    console.log(Ftemp);
-    b.append(createHTMLfragment(Ftemp));
-  }
+        )
+        .join(""),
+    )
+    .join("");
+
+  b.append(createHTMLfragment(Ftemp));
 }
 /* -------------------------------------------
 __ update helpers
 //,,-------------------------------------------*/
+
 function toggleFilterSearch() {
   temp = document.querySelector(".filter--parent");
   temp2 = document.querySelector(".filter__clps");
+  tempHideBtn = document.querySelector(".filter__hide");
+  tempSpan = temp2.querySelector("span");
   temp.classList.toggle("active");
   temp2.classList.toggle("active");
+  tempHideBtn.classList.toggle("active");
+  //if its active
+  temp2.classList.contains("active")
+    ? (temp2.innerHTML = `<span>${closeSign}</span>Close Search & Filters Bar`)
+    : (temp2.innerHTML = `<span>${expandSign}</span>Open Search & Filters Bar`);
 }
 function activeFilterSearch() {
   temp = document.querySelector(".filter--parent");
   temp2 = document.querySelector(".filter__clps");
   temp.classList.add("active");
   temp2.classList.add("active");
+}
+function removeFilterActive(group, value) {
+  const tempR = document.querySelector(
+    `.filtermenu__item[data-group="${group}"][data-value="${value}"]`,
+  );
+  if (tempR) tempR.classList.remove("active");
 }
 function updateCounter(n) {
   const temp = document.querySelector("#filterCount");
@@ -313,6 +324,16 @@ function updateFaceted(card) {
       });
   });
 }
+function updateTigerPadding() {
+  const tiger = document.querySelector(".tiger");
+  const headerH = document.querySelector(`.header`);
+  const filterP = document.querySelector(`.filter--parent`);
+  tiger.style.paddingTop = `${headerH.offsetHeight + filterP.offsetHeight}px`;
+}
+
+/* -------------------------------------------
+__ matches
+//,,-------------------------------------------*/
 
 function matchesFilters(project) {
   return Object.entries(archive.filters).every(([group, values]) => {
@@ -417,7 +438,7 @@ function renderPagination(totalPages) {
   previous.type = "button";
   previous.className = "pagination__previous";
   previous.dataset.pageAction = "previous";
-  previous.textContent = "Previous";
+  previous.textContent = "Previous Page";
 
   previous.disabled = archive.currentPage === 1;
 
@@ -454,7 +475,7 @@ function renderPagination(totalPages) {
   next.type = "button";
   next.className = "pagination__next";
   next.dataset.pageAction = "next";
-  next.textContent = "Next";
+  next.textContent = "Next Page";
 
   next.disabled = archive.currentPage === totalPages;
 
@@ -516,14 +537,8 @@ function setupEvents() {
         archive.filters[filterGroup].push(filterCat);
         activeFilters.push(filterCat);
       }
+      ////
       filterBtn.classList.toggle("active");
-      // let tempFilterBtn = document.querySelector(
-      //   `.filter__toggles--btn[data-group="${filterGroup}"]`,
-      // );
-      // if (archive.filters[filterGroup].length != 0)
-      //   tempFilterBtn.classList.add("selected");
-      // else tempFilterBtn.classList.remove("selected");
-      console.log(archive);
       renderArchive();
       updateFilterZero();
     }
@@ -570,6 +585,33 @@ function setupEvents() {
     //,,-------------------------------------------*/
     const filterClear = event.target.closest(".filter__clear");
     if (filterClear) clearFilters();
+
+    /* -------------------------------------------
+    __ active filters x button
+    //,,-------------------------------------------*/
+    const filteractivebtn = event.target.closest(".filter__actives__item");
+    if (filteractivebtn) {
+      const filtergroup = filteractivebtn.dataset.group;
+      const filtercat = filteractivebtn.dataset.filter;
+      archive.filters[filtergroup] = archive.filters[filtergroup].filter(
+        (item) => item !== filtercat,
+      );
+      removeFilterActive(filtergroup, filtercat);
+      renderArchive();
+      updateFilterZero();
+    }
+    /* -------------------------------------------
+    __ Hide Filter Bar
+    //,,-------------------------------------------*/
+    const filterHide = event.target.closest(".filter__hide");
+    if (filterHide) {
+      const tempGrid = document.querySelector(".filter__grid");
+      console.log(tempGrid);
+      tempGrid.classList.toggle("collapse");
+      tempGrid.classList.contains("collapse")
+        ? filterHide.innerHTML.replace("Hide", "Show")
+        : filterHide.innerHTML.replace("Show", "Hide");
+    }
   });
   // fcosu
   filterContainer.addEventListener("focusin", (event) => {
@@ -593,12 +635,10 @@ function setupEvents() {
 __ slider thing
 //,,-------------------------------------------*/
   const slider = document.querySelector("#gridSlider");
-
   slider.addEventListener("input", () => {
     const tiger = document.querySelector(".tiger");
     const gridValue = document.querySelector("#gridValue");
     const columns = slider.value;
-
     tiger.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
     gridValue.textContent = columns;
   });
@@ -700,6 +740,8 @@ function setFilter(group, value, active) {
 // CLEAR ALL FILTERS
 // ============================================================
 function clearFilters() {
+  tempS = document.querySelector("#searchInput");
+  tempS.value = "";
   archive.search = "";
   archive.currentPage = 1;
   restoreFilters();
@@ -790,10 +832,14 @@ function generateFilters() {
   // genereate the element
   const filterTemp = createHTMLfragment(/* HTML */ `
     <div class="filter__clps--container">
-      <button class="filter__clps">
-        <span>⤡</span>Open Search & Filter Bar
-      </button>
-
+      <div class="filter__clps--left">
+        <button class="filter__clps">
+          <span>⤡</span>Open Search & Filter Bar
+        </button>
+        <button class="filter__hide button-default active">
+          <span>🫣</span>Hide Search Bar
+        </button>
+      </div>
       <button class="filter__clear">
         <span>⌫</span> clear search and filters
       </button>
@@ -804,7 +850,6 @@ function generateFilters() {
         <span id="filterCount">0</span>
       </div>
       <div class="filter__search">
-        <div>Search Query</div>
         <div class="filter__search--container">
           <input
             id="searchInput"
@@ -824,31 +869,15 @@ function generateFilters() {
 
       <div class="filters--parent active">
         <div class="filter__actives--container">
-          <nav>Filter By</nav>
           <div class="filter__actives"></div>
         </div>
-        <div class="filtermenu--container active">${allFilters}</div>
+        <div class="filters--container active">${allFilters}</div>
       </div>
     </div>
   `);
   document.querySelector(".filter--container").append(filterTemp);
 }
 
-createFromHTML(/* HTML */ `
-  <div class="viewmenu--container">
-    <div class="view__title">view toggles</div>
-    <div class="viewbtn--container">
-      <button class="view__btn active">░</button>
-      <button class="view__btn">▤</button>
-      <button class="view__btn">fun1</button>
-      <button class="view__btn">fun2</button>
-    </div>
-    <div class="viewoptions--container">
-      <label for="gridSlider">Columns: <span id="gridValue">1</span></label>
-      <input id="gridSlider" type="range" min="1" max="5" value="1" step="1" />
-    </div>
-  </div>
-`);
 /* -------------------------------------------
 __ helpers
 

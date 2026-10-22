@@ -5,19 +5,28 @@ __ all the vars
   --active--filter--columns: 0;
   --infocard--text: 1.3rem;
   /* spacings */
-  --gap--Normal--elements: 0.2rem;
+  --gap--small: 0.2rem;
   --gap--grid--filtermenu: 2rem;
   --gap--filterToggles: 0.5rem;
 
   /* margins */
   --margin--Normal--elements: 1rem;
+  --margin--small: 0.5rem;
 
   /* paddings */
   --padding--searchBar: 2rem;
   /* colours */
-  --colour--button-active: orange;
+  --color--button-active: orange;
+  --color--background: orange;
   /* animation */
   --animation--time: 0.6s;
+  /* sizing */
+  --height--card--img: 350px;
+
+  /* fonts */
+
+  /* fonts size */
+  --font--size--header: 1.2rem;
 }
 * {
   margin: 0;
@@ -33,6 +42,23 @@ body {
   /* width: 100vw; */
   /* height: 100vh; */
   background: #f5f5f5;
+}
+/* -------------------------------------------
+__ style guide classes?
+//,,-------------------------------------------*/
+.button-default {
+  padding: 0.2rem 0.6rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 0.3rem;
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+  justify-content: flex-start;
+}
+
+button:hover {
+  cursor: pointer;
 }
 
 .tiger {
@@ -52,9 +78,12 @@ body {
 }
 .thumbnail__container {
   width: 100%;
+  max-height: var(--height--card--img);
 }
 .thumbnail__img {
   width: 100%;
+  max-height: 350px;
+  object-fit: contain;
 }
 .infocard__tags {
 }
@@ -69,16 +98,43 @@ body {
   line-height: 1.05;
   font-size: var(--infocard--text);
 }
+/* -------------------------------------------
+__ header
+//,,-------------------------------------------*/
+.header {
+  position: fixed;
+  top: 0;
+}
+.header--container {
+  background: var(--color--background);
+  width: 100vw;
+}
+.header__title--container {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  font-size: var(--font--size--header);
+}
 
 /* -------------------------------------------
 __ search bar stuff
 //,,-------------------------------------------*/
 .filter__search {
-  gap: 0.5rem;
   display: flex;
   position: relative;
   flex-direction: column;
   align-items: center;
+}
+.filter__search::before {
+  content: "Search Query";
+  position: absolute;
+  top: -10px;
+  background: orange;
+  width: 20%;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
 }
 .filter__search--container {
   position: relative;
@@ -143,12 +199,17 @@ __ search bar stuff
 /* -------------------------------------------
 __ filter menu active
 //,,-------------------------------------------*/
-
+.filters--container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  overflow: scroll;
+}
 .filter--parent {
   width: 100vw;
   /* height: 100%; */
   display: flex;
-  position: fixed;
+  position: absolute;
   justify-content: center;
   top: 0;
   z-index: 10;
@@ -188,6 +249,8 @@ __ filter menu active
   gap: 0.5rem;
   max-height: 70vh;
   overflow: scroll;
+  width: 100%;
+  position: relative;
 }
 .filter--parent.active .filter__grid {
   grid-template-columns: 0.25fr 1fr 1fr;
@@ -221,7 +284,7 @@ __ filter menu active
   gap: 0.5rem;
   grid-auto-flow: column;
   /* grid-template-columns: 0.4fr 1fr; */
-  border-bottom: 1px solid black;
+  /* border-bottom: 1px solid black; */
 }
 .filtermenu.active {
   display: grid;
@@ -232,6 +295,20 @@ __ filter menu active
   padding-bottom: 1rem;
   border-bottom: 1px solid black;
 }
+/* -------------------------------------------
+__ hide stuff
+//,,-------------------------------------------*/
+.filter__hide {
+  display: none;
+}
+
+.filter__hide.active {
+  display: flex;
+}
+
+/* -------------------------------------------
+__ clps
+//,,-------------------------------------------*/
 
 .filter__clps.active {
   transform: rotate(0deg);
@@ -255,6 +332,11 @@ __ filter menu active
   align-items: center;
   justify-content: space-between;
 }
+.filter__clps--left {
+  display: flex;
+  flex-direction: row;
+  gap: var(--gap--small);
+}
 .filter--container {
   display: flex;
   position: relative;
@@ -267,7 +349,7 @@ __ filter menu active
   border: 0.3px solid black;
   margin: auto;
   padding: 0.5rem 1rem 0.5rem 1rem;
-  width: 50vw;
+  width: 100vw;
   transition: all var(--animation--time) ease-in-out;
 }
 .filter--parent.active {
@@ -298,9 +380,12 @@ __ filter menu active
 }
 
 .filter__grid > * {
-  padding: 1rem;
+  padding: 1.5rem 1rem 0.5rem 1rem;
   border: 1px solid black;
   border-radius: 1rem;
+}
+.filter__grid.collapse {
+  display: none;
 }
 .filtermenu__items {
   display: none;
@@ -312,6 +397,18 @@ __ filter menu active
 .filtermenu__items.active {
   display: flex;
 }
+.filtermenu--container:has(.filtermenu__items.active)::after {
+  content: "";
+  width: 100%;
+  height: 1px;
+  background: black;
+  position: absolute;
+  bottom: 0;
+}
+.filtermenu--container:has(.filtermenu__items.active) {
+  padding-bottom: 1rem;
+}
+
 .filtermenu--container {
   margin-bottom: 1rem;
   display: flex;
@@ -336,13 +433,14 @@ __ filter menu active
   font-size: 0.8rem;
 }
 .filter--container > *:not(:last-child) {
-  margin-bottom: var(--margin--Normal--elements);
+  /* margin-bottom: var(--margin--Normal--elements); */
+  margin-bottom: var(--margin--small);
 }
 .filter__toggles--container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--gap--Normal--elements);
+  gap: var(--gap--small);
   margin-bottom: var(--margin--Normal--elements);
 }
 .filter__toggles {
@@ -356,7 +454,7 @@ __ filter menu active
   border-radius: 1rem;
 }
 .filter__toggles--btn.active {
-  background: var(--colour--button-active);
+  background: var(--color--button-active);
 }
 .filter__toggles--btn.active.selected {
   background: black;
@@ -365,10 +463,24 @@ __ filter menu active
 .filters--parent {
   display: none;
 }
+.filters--parent::before {
+  content: "Filters Used";
+  position: absolute;
+  top: -10px;
+  background: orange;
+  width: 20%;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+}
 .filters--parent.active {
   display: block;
   max-height: 70vh;
-  overflow: scroll;
+  /* overflow: scroll; */
+  position: relative;
+  align-items: center;
+  display: flex;
+  flex-direction: column;
 }
 .filter__pages--container {
   display: flex;
@@ -398,6 +510,7 @@ __ filter actives
 //,,-------------------------------------------*/
 .filter__actives--container {
   /* margin-bottom: 1.5rem; */
+  width: 100%;
 }
 .filter__actives--container nav {
   width: 100%;
@@ -407,18 +520,24 @@ __ filter actives
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  margin-top: 0.5rem;
   padding-bottom: 0.5rem;
   margin-bottom: 0.5rem;
   border-bottom: 1px dotted black;
 }
-.filter__actives {
+.filter__actives span {
+  font-size: 130%;
 }
 .filter__actives__item {
   line-height: 1;
   padding: 0.2rem 0.5rem;
   background: #ff7e00;
   border-radius: 0.5rem;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.3rem;
+  border: none;
+  font-size: 0.9rem;
 }
 /* -------------------------------------------
 ,, filter menu active and zero
@@ -429,12 +548,14 @@ __ filter actives
 }
 .filtermenu__item.zero {
   color: rgb(174 174 174 / 58%);
+  cursor: default;
 }
 
 /* hover */
 .filtermenu__item:not(.zero):hover {
   background-color: gray;
   color: white;
+  cursor: pointer;
 }
 
 .filtermenu__item.active:hover {
@@ -533,8 +654,9 @@ __ pagination
   flex-direction: row;
   justify-content: space-around;
   gap: 1rem;
-  align-items: flex-end;
+  align-items: center;
   height: 35px;
+  background: var(--color--background);
 }
 .pagination {
   display: flex;
@@ -562,11 +684,13 @@ __ pagination
 __ scroll shit
 //,,-------------------------------------------*/
 .filtermenu--container::webkit-scrollbar,
-.filtermenu__item::webkit-scrollbar {
+.filtermenu__items::webkit-scrollbar,
+.filters--parent::webkit-scrollbar {
   display: none;
 }
-.filtermneu--container,
-.filtermenu__items {
+.filtermenu--container,
+.filtermenu__items,
+.filters--parent {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
