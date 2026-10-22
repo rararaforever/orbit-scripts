@@ -234,7 +234,7 @@ __ filter menu active
   top: 10%;
 }
 .filter--parent.active .filter--container {
-  width: 85vw;
+  /* width: 85vw; */
 }
 .filter--parent.active .filtermenu--container {
   display: flex;
