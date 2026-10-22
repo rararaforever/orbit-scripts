@@ -685,12 +685,14 @@ __ scroll shit
 //,,-------------------------------------------*/
 .filtermenu--container::webkit-scrollbar,
 .filtermenu__items::webkit-scrollbar,
-.filters--parent::webkit-scrollbar {
+.filters--parent::webkit-scrollbar,
+.filters--container::webkit-scrollbar {
   display: none;
 }
 .filtermenu--container,
 .filtermenu__items,
-.filters--parent {
+.filters--parent,
+.filters--container {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
