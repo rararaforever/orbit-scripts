@@ -1,0 +1,985 @@
+// import {} from "./";
+/* -------------------------------------------
+to do:
+
+
+
+
+//,.-------------------------------------------*/
+
+// ————————————————————————————————————————————————————————————
+// ————————————————————————————————————————————————————————————
+//  all the vars
+// ————————————————————————————————————————————————————————————
+// ,,————————————————————————————————————————————————————————————
+window.noImageThumbnail =
+  "https://s3.amazonaws.com/arena_images-temp/uploads%2Fdb4c39ea-2fd3-42af-83bb-6ae6b820133a%2Fthumb-none.png" ||
+  {};
+window.data = window.data || {};
+window.assets = window.assets || {};
+window.lookup = window.lookup || {};
+// window.SPREADSHEET_ID = "1y3S825F2MRgSfZnA7Ip38b0ivhYdozC0p8KDSJZSEok" || {};
+window.SPREADSHEET_ID = "1dqC7mhxzCJ5J8cfv4TS_ihnBU-he_c3Z9z82AGH4y88" || {};
+window.SHEET_TITLE = "ALL" || {};
+window.SHEET_ASSETS = "Assets" || {};
+window.URLD =
+  `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?sheet=${SHEET_TITLE}` ||
+  {};
+window.URLA =
+  `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?sheet=${SHEET_ASSETS}` ||
+  {};
+window.popups = document.querySelectorAll(".popup") || {};
+window.ele_tiger = document.querySelector(".tiger") || {};
+
+window.filterItems = window.filterItems || {};
+window.filterM = window.filterM || {};
+window.filterP = window.filterP || {};
+window.filterT = window.filterT || {};
+window.selectedCategories = window.selectedCategories || {
+  filterM: [],
+  filterP: [],
+  filterT: [],
+};
+window.cardsHolder = window.cardsHolder || [];
+window.cardsContainer = window.cardsContainer || [];
+// rows and stuff
+window.filterCols = window.filterCols || [
+  { col: "i", name: "medium" },
+  { col: "j", name: "programme" },
+  { col: "p", name: "tags" },
+  { col: "n", name: "year" },
+  { col: "l", name: "language" },
+  { col: "k", name: "country" },
+];
+window.searchCols = window.searchCols || [
+  { col: "a", name: "title" },
+  { col: "b", name: "credits" },
+  { col: "e", name: "desc" },
+  { col: "o", name: "names relevant" },
+  { col: "i", name: "medium" },
+  { col: "j", name: "programme" },
+  { col: "k", name: "country" },
+  { col: "l", name: "language" },
+  { col: "n", name: "year" },
+  { col: "p", name: "tags" },
+];
+window.cardCols = window.cardCols || [
+  { col: "a", name: "title" },
+  { col: "b", name: "credits" },
+  { col: "e", name: "desc" },
+  { col: "o", name: "names relevant" },
+  { col: "i", name: "medium" },
+  { col: "j", name: "programme" },
+  { col: "k", name: "country" },
+  { col: "l", name: "language" },
+  { col: "n", name: "year" },
+  { col: "p", name: "tags" },
+];
+window.activeFilters = window.activeFilters || [];
+let idRow = "u";
+let slugRow = "v";
+// rows to show on the cards
+const selectedFilters = {
+  medium: [],
+  programme: [],
+  tags: [],
+  year: [],
+  language: [],
+  country: [],
+};
+let facetedFilters = {
+  medium: [],
+  programme: [],
+  tags: [],
+  year: [],
+  language: [],
+  country: [],
+};
+let searchQuery = "";
+let projectPerPage = 50;
+let activeFilterCountToggle = 0;
+let expandSign = "⤡";
+let closeSign = "x";
+// const archive = {
+//  entries : [],
+//  currentPage:1,
+//  perPage: 50,
+//  searchQuery: '',
+//  filters: selectedFilters,
+
+// }
+
+// ============================================================
+// ARCHIVE
+// Filter → Search → Pagination → Render
+// ============================================================
+
+const archive = {
+  // ----------------------------------------------------------
+  // DATA
+  // ----------------------------------------------------------
+
+  projects: [],
+  // ----------------------------------------------------------
+  // STATE
+  // ----------------------------------------------------------
+  currentPage: 1,
+  perPage: 50,
+  search: "",
+  filters: selectedFilters,
+
+  // ----------------------------------------------------------
+  // DOM
+  // ----------------------------------------------------------
+  container: document.querySelector(".tiger"),
+  pagination: document.querySelector(".pagination"),
+};
+/* -------------------------------------------
+__ start
+//,,-------------------------------------------*/
+if (!data.length) logSheetData();
+// else
+
+// async function fetchsheet(url)
+async function logSheetData() {
+  try {
+    // fetch data for URL for data and assets
+    [data, assets] = await Promise.all([fetchSheet(URLD), fetchSheet(URLA)]);
+    lookup = createLookup(assets);
+    lookupSlug = createSlugLookup(data);
+    console.log("Sheet 1:", data);
+    console.log("Sheet 2:", assets);
+    console.log("Sheet 3:", lookup);
+    initArchive(data);
+    // initElemenets();
+  } catch (error) {
+    console.error("❌ Error fetching sheets:", error);
+  }
+  console.log("cardsContainer:", cardsContainer);
+  console.log("filterCols", filterCols);
+  console.log("searchCols", searchCols);
+  console.log("Filteritems", filterItems);
+}
+
+function initArchive() {
+  initFilters();
+  archive.searchInput = document.querySelector("#searchInput");
+  archive.projects = prepProjects();
+  console.log(archive);
+  setupEvents();
+  renderArchive();
+  updateTigerPadding();
+}
+function prepProjects() {
+  return data.map((row) => {
+    let tempcard = {
+      filters: {},
+      searchs: {},
+      cardEls: {},
+      visible: false,
+    };
+    filterCols.forEach((c) => {
+      tempcard.filters[c.name] = row[c.col] ? String(row[c.col]) : "null";
+    });
+    searchCols.forEach((c) => {
+      tempcard.searchs[c.name] = row[c.col] ? String(row[c.col]) : "null";
+    });
+    cardCols.forEach((c) => {
+      tempcard.cardEls[c.name] = row[c.col] ? String(row[c.col]) : "null";
+    });
+    tempcard.thumbnail = getThumbnail(row).src;
+    tempcard.year = row.n;
+    tempcard.desc = row.e;
+    tempcard.slug = row.v;
+    tempcard.title = row.a;
+    return tempcard;
+  });
+}
+// ============================================================
+// MAIN RENDER
+// ============================================================
+function renderArchive() {
+  // ----------------------------------------------------------
+  // 1. FILTER
+  // ----------------------------------------------------------
+  const filteredProjects = getFilteredProjects();
+  updateCounter(filteredProjects.length);
+  console.log(archive);
+  //updtae filter
+  updateFilterActive(archive.filters);
+  // ----------------------------------------------------------
+  // 2. CALCULATE PAGINATION
+  // ----------------------------------------------------------
+
+  const totalPages = Math.ceil(filteredProjects.length / archive.perPage);
+
+  // If filtering causes the current page to no longer exist,
+  // move back to the last valid page.
+
+  if (totalPages === 0) {
+    archive.currentPage = 1;
+  } else if (archive.currentPage > totalPages) {
+    archive.currentPage = totalPages;
+  }
+  // ----------------------------------------------------------
+  // 3. GET CURRENT PAGE
+  // ----------------------------------------------------------
+
+  const pageProjects = getCurrentPage(filteredProjects);
+  // ----------------------------------------------------------
+  // 4. RENDER CARDS
+  // ----------------------------------------------------------
+  renderCards(pageProjects);
+  // ----------------------------------------------------------
+  // 5. RENDER PAGINATION
+  // ----------------------------------------------------------
+  renderPagination(totalPages);
+  /* -------------------------------------------
+  __ 6.
+  //,,-------------------------------------------*/
+}
+
+// ============================================================
+// FILTER
+// ============================================================
+//update the archive.filters
+
+function getFilteredProjects() {
+  return archive.projects.filter((project) => {
+    const bull = matchesFilters(project) && matchesSearch(project);
+    // add the faceted filter stuff
+    if (bull) updateFaceted(project);
+    return bull;
+  });
+}
+
+// ============================================================
+// FILTER MATCHING
+// ============================================================
+function updateFilterActive(filters) {
+  let b = document.querySelector(".filter__actives");
+  b.innerHTML = "";
+  const Ftemp = Object.entries(filters)
+    .map(([group, values]) =>
+      values
+        .map(
+          (f) => /*HTML */ `
+      <button class="filter__actives__item" data-group="${group}" data-filter="${f}">
+      <span>×</span>${f}
+      </button> 
+      `,
+        )
+        .join(""),
+    )
+    .join("");
+
+  b.append(createHTMLfragment(Ftemp));
+}
+/* -------------------------------------------
+__ update helpers
+//,,-------------------------------------------*/
+
+function toggleFilterSearch() {
+  temp = document.querySelector(".filter--parent");
+  temp2 = document.querySelector(".filter__clps");
+  tempHideBtn = document.querySelector(".filter__hide");
+  tempSpan = temp2.querySelector("span");
+  temp.classList.toggle("active");
+  temp2.classList.toggle("active");
+  tempHideBtn.classList.toggle("active");
+  //if its active
+  temp2.classList.contains("active")
+    ? (temp2.innerHTML = `<span>${closeSign}</span>Close Search & Filters Bar`)
+    : (temp2.innerHTML = `<span>${expandSign}</span>Open Search & Filters Bar`);
+}
+function activeFilterSearch() {
+  temp = document.querySelector(".filter--parent");
+  temp2 = document.querySelector(".filter__clps");
+  temp.classList.add("active");
+  temp2.classList.add("active");
+}
+function removeFilterActive(group, value) {
+  const tempR = document.querySelector(
+    `.filtermenu__item[data-group="${group}"][data-value="${value}"]`,
+  );
+  if (tempR) tempR.classList.remove("active");
+}
+function updateCounter(n) {
+  const temp = document.querySelector("#filterCount");
+  temp.innerHTML = `${n}`;
+}
+function updateFaceted(card) {
+  Object.entries(card.filters).forEach(([group, values]) => {
+    values
+      .split(",")
+      .map((value) => value.trim())
+      .forEach((value) => {
+        if (
+          !facetedFilters[group].includes(value) &&
+          value !== "null" &&
+          value != null
+        ) {
+          facetedFilters[group].push(value);
+        }
+      });
+  });
+}
+function updateTigerPadding() {
+  const tiger = document.querySelector(".tiger");
+  const headerH = document.querySelector(`.header`);
+  const filterP = document.querySelector(`.filter--parent`);
+  tiger.style.paddingTop = `${headerH.offsetHeight + filterP.offsetHeight}px`;
+}
+
+/* -------------------------------------------
+__ matches
+//,,-------------------------------------------*/
+
+function matchesFilters(project) {
+  return Object.entries(archive.filters).every(([group, values]) => {
+    // no filters selected
+    if (values.length === 0) return true;
+    // if no filters
+    return values.every((value) => project.filters[group].includes(value));
+  });
+}
+function matchesSearch(project) {
+  if (!archive.search) {
+    return true;
+  }
+  return searchCols.some((column) => {
+    return project.searchs[column.name]
+      ?.toLowerCase()
+      .includes(archive.search.toLowerCase());
+  });
+}
+
+// ============================================================
+// PAGINATION
+// ============================================================
+
+function getCurrentPage(projects) {
+  const start = (archive.currentPage - 1) * archive.perPage;
+
+  return projects.slice(start, start + archive.perPage);
+}
+
+// ============================================================
+// RENDER CARDS
+// ============================================================
+function renderCards(projects) {
+  // Remove the old page
+  archive.container.replaceChildren();
+
+  // Create everything off-DOM
+  const fragment = document.createDocumentFragment();
+
+  for (const project of projects) {
+    const card = createCard(project);
+
+    fragment.append(card);
+  }
+
+  // One DOM insertion
+  archive.container.append(fragment);
+}
+
+// ============================================================
+// CREATE CARD
+// ============================================================
+
+function createCard(project) {
+  const card = document.createElement("article");
+  card.className = "archivecard__container";
+  card.dataset.slug = project.slug;
+  card.dataset.title = project.title;
+  card.innerHTML = /* HTML */ `
+    <div class="thumbnail__container">
+      ${project.thumbnail
+        ? `<img
+        class="thumbnail__img"
+              src="${project.thumbnail}"
+              alt=""
+              loading="lazy"
+              decoding="async"
+            >`
+        : ""}
+    </div>
+    <div class="infocard">
+      <div class="infocard__title">${project.title}</div>
+      <div class="infocard__tags">${project.year}</div>
+    </div>
+    <div class="infocard__des">${project.desc}</div>
+  `;
+
+  return card;
+}
+
+// ============================================================
+// PAGINATION UI
+// ============================================================
+
+function renderPagination(totalPages) {
+  archive.pagination.replaceChildren();
+
+  // No pagination needed
+  if (totalPages <= 1) {
+    return;
+  }
+
+  const fragment = document.createDocumentFragment();
+
+  // ----------------------------------------------------------
+  // PREVIOUS
+  // ----------------------------------------------------------
+
+  const previous = document.createElement("button");
+
+  previous.type = "button";
+  previous.className = "pagination__previous";
+  previous.dataset.pageAction = "previous";
+  previous.textContent = "Previous Page";
+
+  previous.disabled = archive.currentPage === 1;
+
+  fragment.append(previous);
+
+  // ----------------------------------------------------------
+  // PAGE NUMBERS
+  // ----------------------------------------------------------
+
+  for (let page = 1; page <= totalPages; page++) {
+    const button = document.createElement("button");
+
+    button.type = "button";
+    button.className = "pagination__page";
+
+    button.dataset.page = page;
+
+    button.textContent = page;
+
+    if (page === archive.currentPage) {
+      button.classList.add("active");
+      button.setAttribute("aria-current", "page");
+    }
+
+    fragment.append(button);
+  }
+
+  // ----------------------------------------------------------
+  // NEXT
+  // ----------------------------------------------------------
+
+  const next = document.createElement("button");
+
+  next.type = "button";
+  next.className = "pagination__next";
+  next.dataset.pageAction = "next";
+  next.textContent = "Next Page";
+
+  next.disabled = archive.currentPage === totalPages;
+
+  fragment.append(next);
+
+  archive.pagination.append(fragment);
+}
+
+// ============================================================
+// EVENTS
+// ============================================================
+
+function setupEvents() {
+  // ----------------------------------------------------------
+  // CARD CLICK
+  //
+  // ONE listener for all cards.
+  // ----------------------------------------------------------
+
+  archive.container.addEventListener("click", (event) => {
+    const card = event.target.closest(".archivecard__container");
+
+    if (!card) {
+      return;
+    }
+
+    const slug = card.dataset.slug;
+
+    if (!slug) {
+      return;
+    }
+
+    window.location.href = `/orbit-archivepage#${slug}`;
+  });
+
+  //deactive backdrop + the thing
+
+  // filters shit
+  /* -------------------------------------------
+  __ all the filter-events
+  //,,-------------------------------------------*/
+
+  const filterContainer = document.querySelector(".filter--container");
+  filterContainer.addEventListener("click", (event) => {
+    const filterBtn = event.target.closest(".filtermenu__item");
+    // filterBtn to update the archive cards
+    if (filterBtn) {
+      event.preventDefault();
+      restoreF();
+      const filterCat = filterBtn.dataset.value;
+      const filterGroup = filterBtn.dataset.group;
+      //already active
+      if (filterBtn.classList.contains("active")) {
+        archive.filters[filterGroup] = archive.filters[filterGroup].filter(
+          (item) => item !== filterCat,
+        );
+        activeFilters = activeFilters.filter((b) => b != filterCat);
+      } else {
+        archive.filters[filterGroup].push(filterCat);
+        activeFilters.push(filterCat);
+      }
+      ////
+      filterBtn.classList.toggle("active");
+      renderArchive();
+      updateFilterZero();
+    }
+    // filter menus toggles
+    const filterToggleBtn = event.target.closest(".filter__toggles--btn");
+    if (filterToggleBtn) {
+      const group = filterToggleBtn.dataset.group;
+      const menu = document.querySelector(`.filtermenu[data-group="${group}"]`);
+      if (!filterToggleBtn.classList.contains("selected")) {
+        menu.classList.toggle("active");
+        filterToggleBtn.classList.toggle("active");
+        if (menu.classList.contains("active")) activeFilterCountToggle++;
+        else activeFilterCountToggle--;
+        //for the css
+        setColumns(activeFilterCountToggle);
+      }
+    }
+    /* -------------------------------------------
+    __ filtergroup collapsing
+    //,,-------------------------------------------*/
+    const filterGroup = event.target.closest(".filtermenu__group--btn");
+    if (filterGroup) {
+      console.log("b");
+      const group = filterGroup.dataset.group;
+      const tri = filterGroup.querySelector(".tri");
+      const filterMenu = document.querySelector(
+        `.filtermenu__items[data-group="${group}"]`,
+      );
+      filterMenu.classList.toggle("active");
+      filterGroup.classList.toggle("active");
+      filterGroup.classList.contains("active")
+        ? (tri.innerHTML = "▲")
+        : (tri.innerHTML = "▼");
+    }
+    const filterClpsBtn = event.target.closest(".filter__clps");
+    if (filterClpsBtn) {
+      toggleFilterSearch();
+      // temp = document.querySelector(".filter--parent");
+      // temp.classList.toggle("active");
+      // filterClpsBtn.classList.toggle("active");
+    }
+    /* -------------------------------------------
+    __ filter clear
+    //,,-------------------------------------------*/
+    const filterClear = event.target.closest(".filter__clear");
+    if (filterClear) clearFilters();
+
+    /* -------------------------------------------
+    __ active filters x button
+    //,,-------------------------------------------*/
+    const filteractivebtn = event.target.closest(".filter__actives__item");
+    if (filteractivebtn) {
+      const filtergroup = filteractivebtn.dataset.group;
+      const filtercat = filteractivebtn.dataset.filter;
+      archive.filters[filtergroup] = archive.filters[filtergroup].filter(
+        (item) => item !== filtercat,
+      );
+      removeFilterActive(filtergroup, filtercat);
+      renderArchive();
+      updateFilterZero();
+    }
+    /* -------------------------------------------
+    __ Hide Filter Bar
+    //,,-------------------------------------------*/
+    const filterHide = event.target.closest(".filter__hide");
+    if (filterHide) {
+      const tempGrid = document.querySelector(".filter__grid");
+      console.log(tempGrid);
+      tempGrid.classList.toggle("collapse");
+      tempGrid.classList.contains("collapse")
+        ? filterHide.innerHTML.replace("Hide", "Show")
+        : filterHide.innerHTML.replace("Show", "Hide");
+    }
+  });
+  // fcosu
+  filterContainer.addEventListener("focusin", (event) => {
+    const filterBtn = event.target.closest("#searchInput");
+    // If the focused element isn't part of a filter button, stop
+    if (!filterBtn) return;
+    // Do what you want when the button gets focus
+    activeFilterSearch();
+  });
+  // keydown
+  filterContainer.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== "Escape") return;
+    const filterBtn = event.target.closest("#searchInput");
+    if (!filterBtn) return;
+    event.preventDefault();
+    toggleFilterSearch();
+    filterBtn.blur();
+  });
+
+  /* -------------------------------------------
+__ slider thing
+//,,-------------------------------------------*/
+  const slider = document.querySelector("#gridSlider");
+  slider.addEventListener("input", () => {
+    const tiger = document.querySelector(".tiger");
+    const gridValue = document.querySelector("#gridValue");
+    const columns = slider.value;
+    tiger.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
+    gridValue.textContent = columns;
+  });
+  /* -------------------------------------------
+__ 
+//,,-------------------------------------------*/
+
+  /* -------------------------------------------
+  __ collapse
+  //,,-------------------------------------------*/
+
+  // ----------------------------------------------------------
+  // PAGINATION CLICK
+  //
+  // ONE listener for all pagination buttons.
+  // ----------------------------------------------------------
+
+  archive.pagination.addEventListener("click", (event) => {
+    const pageButton = event.target.closest("[data-page]");
+
+    if (pageButton) {
+      archive.currentPage = Number(pageButton.dataset.page);
+
+      renderArchive();
+
+      return;
+    }
+    const actionButton = event.target.closest("[data-page-action]");
+
+    if (!actionButton) {
+      return;
+    }
+    const action = actionButton.dataset.pageAction;
+
+    if (action === "previous") {
+      archive.currentPage--;
+    } else if (action === "next") {
+      archive.currentPage++;
+    }
+
+    renderArchive();
+  });
+
+  // ----------------------------------------------------------
+  // SEARCH
+  // ----------------------------------------------------------
+
+  if (archive.searchInput) {
+    archive.searchInput.addEventListener("input", (event) => {
+      archive.search = event.target.value;
+
+      // Search results always start
+      // from page 1.
+
+      archive.currentPage = 1;
+
+      renderArchive();
+    });
+  }
+}
+// ============================================================
+// FILTER API
+// ============================================================
+function updateFilterZero() {
+  const filters = document.querySelectorAll(".filtermenu__item");
+  filters.forEach((filter) => {
+    const filterCat = filter.dataset.value;
+    if (!facetedFilters[filter.dataset.group].includes(filterCat)) {
+      filter.classList.add("zero");
+    } else {
+      filter.classList.remove("zero");
+    }
+  });
+}
+function setFilter(group, value, active) {
+  // Create the Set if it doesn't exist
+  if (!archive.filters[group]) {
+    archive.filters[group] = new Set();
+  }
+  const values = archive.filters[group];
+  if (active) {
+    values.add(value);
+  } else {
+    values.delete(value);
+  }
+  // ----------------------------------------------------------
+  // Remove empty filter groups
+  // ----------------------------------------------------------
+  if (values.size === 0) {
+    delete archive.filters[group];
+  }
+  // ----------------------------------------------------------
+  // ALWAYS return to page 1 after filtering
+  // ----------------------------------------------------------
+  archive.currentPage = 1;
+  renderArchive();
+}
+// ============================================================
+// CLEAR ALL FILTERS
+// ============================================================
+function clearFilters() {
+  tempS = document.querySelector("#searchInput");
+  tempS.value = "";
+  archive.search = "";
+  archive.currentPage = 1;
+  restoreFilters();
+  restoreF();
+  renderArchive();
+  updateFilterZero();
+}
+// ============================================================
+// CHANGE ITEMS PER PAGE
+// ============================================================
+//usefull
+function setPerPage(amount) {
+  archive.perPage = amount;
+  archive.currentPage = 1;
+  renderArchive();
+}
+/* -------------------------------------------
+__ filters init and generate
+//,,-------------------------------------------*/
+function initFilters() {
+  filterItems = [];
+  filterCols.forEach((c) => {
+    filterItems.push({
+      group: c.name,
+      id: `f-${c.col}`,
+      data: getallfilters(c.col),
+    });
+  });
+  generateFilters();
+}
+function getallfilters(row) {
+  return [
+    ...new Set(
+      data.flatMap(
+        (item) =>
+          String(item[row])
+            ?.split(",")
+            .map((tag) => tag.trim())
+            .filter((tag) => tag !== "null") || [],
+      ),
+    ),
+  ].sort();
+}
+function generateFilters() {
+  //generate the filters
+  let allFilters = filterItems
+    .map((f, index) => {
+      const itemsHTML = f.data
+        .map(
+          (item) =>
+            /* HTML */ ` <div
+              class="filtermenu__item ${f.id}"
+              data-group="${f.group}"
+              data-value="${item.trim()}"
+            >
+              ${item}
+            </div>`,
+        )
+        .join("");
+      const fly = /* HTML */ `
+        <div class="filtermenu" data-group="${f.group}">
+          <div class="filtermenu--container">
+            <div>
+              <button class="filtermenu__group--btn" data-group="${f.group}">
+                ${filterCols[index].name}<span class="tri">▼</span>
+              </button>
+            </div>
+            <div class="filtermenu__items" data-group="${f.group}">
+              ${itemsHTML}
+            </div>
+          </div>
+        </div>
+      `;
+      return fly;
+    })
+    .join("");
+  let filterToggles = filterItems
+    .map((f) => {
+      const toggle = /* HTML */ `<button
+        class="filter__toggles--btn"
+        data-group="${f.group}"
+      >
+        ${f.group}
+      </button>`;
+      return toggle;
+    })
+    .join("");
+  // genereate the element
+  const filterTemp = createHTMLfragment(/* HTML */ `
+    <div class="filter__clps--container">
+      <div class="filter__clps--left">
+        <button class="filter__clps">
+          <span>⤡</span>Open Search & Filter Bar
+        </button>
+        <button class="filter__hide button-default active">
+          <span>🫣</span>Hide Search Bar
+        </button>
+      </div>
+      <button class="filter__clear">
+        <span>⌫</span> clear search and filters
+      </button>
+    </div>
+    <div class="filter__grid">
+      <div class="filter__count">
+        <div>Entries Available based on search query and active filters:</div>
+        <span id="filterCount">0</span>
+      </div>
+      <div class="filter__search">
+        <div class="filter__search--container">
+          <input
+            id="searchInput"
+            type="text"
+            placeholder="Search..."
+            autocomplete="off"
+          />
+
+          <span class="search-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <circle cx="10.5" cy="10.5" r="6.5"></circle>
+              <path d="M15.5 15.5L21 21"></path>
+            </svg>
+          </span>
+        </div>
+      </div>
+
+      <div class="filters--parent active">
+        <div class="filter__actives--container">
+          <div class="filter__actives"></div>
+        </div>
+        <div class="filters--container active">${allFilters}</div>
+      </div>
+    </div>
+  `);
+  document.querySelector(".filter--container").append(filterTemp);
+}
+
+/* -------------------------------------------
+__ helpers
+
+//,,-------------------------------------------*/
+async function fetchSheet(url) {
+  const response = await fetch(url);
+  const text = await response.text();
+  const jsonString = text.substring(
+    text.indexOf("{"),
+    text.lastIndexOf("}") + 1,
+  );
+  const json = JSON.parse(jsonString);
+  return json.table.rows.map((row) => {
+    const obj = {};
+    for (let i = 0; i < row.c.length; i++) {
+      obj[String.fromCharCode(97 + i)] = row.c[i] ? row.c[i].v : null;
+    }
+    return obj;
+  });
+}
+//look up for finding the assets
+function createLookup(sheet2Data) {
+  return Object.fromEntries(sheet2Data.map((row) => [row.a, row]));
+}
+//create slug lookup
+function createSlugLookup(sheetData) {
+  return Object.fromEntries(sheetData.map((row) => [row.v, row]));
+}
+//html helpers
+function createFromHTML(html) {
+  const template = document.createElement("template");
+  template.innerHTML = html.trim();
+  return template.content.firstElementChild;
+}
+function createHTMLfragment(html) {
+  const template = document.createElement("template");
+  template.innerHTML = html.trim();
+  return template.content;
+}
+function getThumbnail(row) {
+  if (row[idRow] == null)
+    return {
+      src: noImageThumbnail,
+      alt_text: null,
+    };
+  let t = parseToObjects(row[idRow]);
+  let link = lookup[t[0].value];
+  if (link == null) {
+    console.log("No asset found for id: " + t[0].value);
+    return {
+      src: noImageThumbnail,
+      alt_text: null,
+    };
+  } else {
+    return { src: link.d ? link.d : null, alt_text: link.f };
+  }
+}
+function parseToObjects(text) {
+  const lines = text.split("\n"); // works even if no \n
+  return lines
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .map((line) => {
+      if (line.includes(":")) {
+        const [key, ...rest] = line.split(":");
+        return { [key.trim()]: rest.join(":").trim() };
+      }
+      return { value: line };
+    });
+}
+function restoreFilters() {
+  archive.filters = {
+    medium: [],
+    programme: [],
+    tags: [],
+    year: [],
+    language: [],
+    country: [],
+  };
+  activeFilters = [];
+  tempC = document.querySelectorAll(".filtermenu__item");
+  tempC.forEach((c) => c.classList.remove("active"));
+}
+function restoreF() {
+  facetedFilters = {
+    medium: [],
+    programme: [],
+    tags: [],
+    year: [],
+    language: [],
+    country: [],
+  };
+}
+// event for updating the window width?
+function updateWindowWidth() {
+  window.addEventListener("resize", () => {
+    windowWidth = window.innerWidth;
+  });
+}
+
+function setColumns(count) {
+  const grid = document.querySelector(".filtermenu--container.active");
+  // grid.style.setProperty("--active-columns", count);
+  // grid.style.justifyItems = count === 1 ? "start" : "center";
+}

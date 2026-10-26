@@ -1,24 +1,21 @@
 // import {} from "./";
+
 /* -------------------------------------------
-to do:
-
-
-
-
-//,.-------------------------------------------*/
-
-// ————————————————————————————————————————————————————————————
-// ————————————————————————————————————————————————————————————
-//  all the vars
-// ————————————————————————————————————————————————————————————
-// ,,————————————————————————————————————————————————————————————
+__
+//,, SHARED DATA AND LOOKUPS
+//,,-------------------------------------------*/
 window.noImageThumbnail =
   "https://s3.amazonaws.com/arena_images-temp/uploads%2Fdb4c39ea-2fd3-42af-83bb-6ae6b820133a%2Fthumb-none.png" ||
   {};
-window.data = window.data || {};
-window.assets = window.assets || {};
+window.data = window.data || [];
+window.assets = window.assets || [];
 window.lookup = window.lookup || {};
-// window.SPREADSHEET_ID = "1y3S825F2MRgSfZnA7Ip38b0ivhYdozC0p8KDSJZSEok" || {};
+window.lookupSlug = window.lookupSlug || {};
+
+/* -------------------------------------------
+__
+//,, SPREADSHEET CONFIGURATION
+//,,-------------------------------------------*/
 window.SPREADSHEET_ID = "1dqC7mhxzCJ5J8cfv4TS_ihnBU-he_c3Z9z82AGH4y88" || {};
 window.SHEET_TITLE = "ALL" || {};
 window.SHEET_ASSETS = "Assets" || {};
@@ -28,10 +25,19 @@ window.URLD =
 window.URLA =
   `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?sheet=${SHEET_ASSETS}` ||
   {};
+
+/* -------------------------------------------
+__
+//,, DOM REFERENCES
+//,,-------------------------------------------*/
 window.popups = document.querySelectorAll(".popup") || {};
 window.ele_tiger = document.querySelector(".tiger") || {};
 
-window.filterItems = window.filterItems || {};
+/* -------------------------------------------
+__
+//,, FILTER AND CARD CONFIGURATION
+//,,-------------------------------------------*/
+window.filterItems = window.filterItems || [];
 window.filterM = window.filterM || {};
 window.filterP = window.filterP || {};
 window.filterT = window.filterT || {};
@@ -42,7 +48,6 @@ window.selectedCategories = window.selectedCategories || {
 };
 window.cardsHolder = window.cardsHolder || [];
 window.cardsContainer = window.cardsContainer || [];
-// rows and stuff
 window.filterCols = window.filterCols || [
   { col: "i", name: "medium" },
   { col: "j", name: "programme" },
@@ -76,672 +81,419 @@ window.cardCols = window.cardCols || [
   { col: "p", name: "tags" },
 ];
 window.activeFilters = window.activeFilters || [];
+
+/* -------------------------------------------
+__
+//,, ARCHIVE SETTINGS
+//,,-------------------------------------------*/
 let idRow = "u";
 let slugRow = "v";
-// rows to show on the cards
-const selectedFilters = {
-  medium: [],
-  programme: [],
-  tags: [],
-  year: [],
-  language: [],
-  country: [],
-};
-let facetedFilters = {
-  medium: [],
-  programme: [],
-  tags: [],
-  year: [],
-  language: [],
-  country: [],
-};
-let searchQuery = "";
-let projectPerPage = 50;
 let activeFilterCountToggle = 0;
 let expandSign = "⤡";
 let closeSign = "x";
-// const archive = {
-//  entries : [],
-//  currentPage:1,
-//  perPage: 50,
-//  searchQuery: '',
-//  filters: selectedFilters,
+const archiveLoadingStartedAt = performance.now();
+const archiveLoadingMinimumDuration = 1500;
+// Set this to the URL of the video played whenever the randomizer is spun.
+const archiveSpinAnimationSource = "";
 
-// }
+/* -------------------------------------------
+__
+//,, FILTER STATE
+//,,-------------------------------------------*/
+const createDefaultFilterState = () => ({
+  medium: [],
+  programme: [],
+  tags: [],
+  year: [],
+  language: [],
+  country: [],
+});
 
-// ============================================================
-// ARCHIVE
-// Filter → Search → Pagination → Render
-// ============================================================
+const selectedFilters = createDefaultFilterState();
+let facetedFilters = createDefaultFilterState();
+let activeFilters = [];
+let searchQuery = "";
+let projectPerPage = 50;
 
+/* -------------------------------------------
+__
+//,, ARCHIVE STATE
+//,,-------------------------------------------*/
 const archive = {
-  // ----------------------------------------------------------
-  // DATA
-  // ----------------------------------------------------------
-
   projects: [],
-  // ----------------------------------------------------------
-  // STATE
-  // ----------------------------------------------------------
   currentPage: 1,
   perPage: 50,
+  viewMode: "grid",
   search: "",
-  filters: selectedFilters,
-
-  // ----------------------------------------------------------
-  // DOM
-  // ----------------------------------------------------------
+  filters: createDefaultFilterState(),
+  filteredProjects: [],
+  randomizedProjects: [],
+  randomizerTimer: null,
   container: document.querySelector(".tiger"),
   pagination: document.querySelector(".pagination"),
+  loading: document.querySelector("#archiveLoading"),
+  searchInput: null,
 };
-/* -------------------------------------------
-__ start
-//,,-------------------------------------------*/
-if (!data.length) logSheetData();
-// else
 
-// async function fetchsheet(url)
-async function logSheetData() {
-  try {
-    // fetch data for URL for data and assets
-    [data, assets] = await Promise.all([fetchSheet(URLD), fetchSheet(URLA)]);
-    lookup = createLookup(assets);
-    lookupSlug = createSlugLookup(data);
-    console.log("Sheet 1:", data);
-    console.log("Sheet 2:", assets);
-    console.log("Sheet 3:", lookup);
-    initArchive(data);
-    // initElemenets();
-  } catch (error) {
-    console.error("❌ Error fetching sheets:", error);
-  }
-  console.log("cardsContainer:", cardsContainer);
-  console.log("filterCols", filterCols);
-  console.log("searchCols", searchCols);
-  console.log("Filteritems", filterItems);
+function resetFacetedFilters() {
+  facetedFilters = createDefaultFilterState();
 }
 
-function initArchive() {
+/* -------------------------------------------
+__
+//,, DATA LOADING AND INITIALIZATION
+//,,-------------------------------------------*/
+if (data.length) {
+  initArchive().catch((error) => {
+    console.error("❌ Failed to render archive:", error);
+    showArchiveLoadingError();
+  });
+} else {
+  logSheetData();
+}
+
+async function logSheetData() {
+  try {
+    const [sheetData, sheetAssets] = await Promise.all([
+      fetchSheet(URLD),
+      fetchSheet(URLA),
+    ]);
+
+    data = sheetData;
+    assets = sheetAssets;
+    lookup = createLookup(assets);
+    lookupSlug = createSlugLookup(data);
+
+    await initArchive();
+  } catch (error) {
+    console.error("❌ Failed to load or render archive:", error);
+    showArchiveLoadingError();
+  }
+}
+
+async function initArchive() {
   initFilters();
   archive.searchInput = document.querySelector("#searchInput");
   archive.projects = prepProjects();
-  console.log(archive);
   setupEvents();
+  updateViewControls();
+  updateFilterVisibility();
   renderArchive();
   updateTigerPadding();
+  await hideArchiveLoading();
 }
+
+async function hideArchiveLoading() {
+  if (!archive.loading) {
+    return;
+  }
+
+  const elapsed = performance.now() - archiveLoadingStartedAt;
+  const remaining = archiveLoadingMinimumDuration - elapsed;
+
+  if (remaining > 0) {
+    await new Promise((resolve) => setTimeout(resolve, remaining));
+  }
+
+  archive.loading.setAttribute("aria-busy", "false");
+  archive.loading.hidden = true;
+}
+
+function showArchiveLoadingError() {
+  if (!archive.loading) {
+    return;
+  }
+
+  const message = archive.loading.querySelector(
+    ".archive-loading__message",
+  );
+
+  archive.loading.classList.add("archive-loading--error");
+  archive.loading.setAttribute("aria-busy", "false");
+
+  if (message) {
+    message.textContent = "Unable to load the archive. Please refresh to try again.";
+  }
+}
+
+/* -------------------------------------------
+__
+//,, PROJECT PREPARATION AND ARCHIVE RENDERING
+//,,-------------------------------------------*/
 function prepProjects() {
   return data.map((row) => {
-    let tempcard = {
+    const project = {
       filters: {},
       searchs: {},
       cardEls: {},
       visible: false,
     };
-    filterCols.forEach((c) => {
-      tempcard.filters[c.name] = row[c.col] ? String(row[c.col]) : "null";
+
+    filterCols.forEach((column) => {
+      project.filters[column.name] = row[column.col]
+        ? String(row[column.col])
+        : "null";
     });
-    searchCols.forEach((c) => {
-      tempcard.searchs[c.name] = row[c.col] ? String(row[c.col]) : "null";
+
+    searchCols.forEach((column) => {
+      project.searchs[column.name] = row[column.col]
+        ? String(row[column.col])
+        : "null";
     });
-    cardCols.forEach((c) => {
-      tempcard.cardEls[c.name] = row[c.col] ? String(row[c.col]) : "null";
+
+    cardCols.forEach((column) => {
+      project.cardEls[column.name] = row[column.col]
+        ? String(row[column.col])
+        : "null";
     });
-    tempcard.thumbnail = getThumbnail(row).src;
-    tempcard.year = row.n;
-    tempcard.desc = row.e;
-    tempcard.slug = row.v;
-    tempcard.title = row.a;
-    return tempcard;
+
+    project.thumbnail = getThumbnail(row).src;
+    project.year = row.n;
+    project.desc = row.e;
+    project.slug = row.v;
+    project.title = row.a;
+
+    return project;
   });
 }
-// ============================================================
-// MAIN RENDER
-// ============================================================
+
 function renderArchive() {
-  // ----------------------------------------------------------
-  // 1. FILTER
-  // ----------------------------------------------------------
+  resetFacetedFilters();
+
   const filteredProjects = getFilteredProjects();
+  archive.filteredProjects = filteredProjects;
   updateCounter(filteredProjects.length);
-  console.log(archive);
-  //updtae filter
   updateFilterActive(archive.filters);
-  // ----------------------------------------------------------
-  // 2. CALCULATE PAGINATION
-  // ----------------------------------------------------------
 
   const totalPages = Math.ceil(filteredProjects.length / archive.perPage);
-
-  // If filtering causes the current page to no longer exist,
-  // move back to the last valid page.
-
-  if (totalPages === 0) {
-    archive.currentPage = 1;
-  } else if (archive.currentPage > totalPages) {
-    archive.currentPage = totalPages;
-  }
-  // ----------------------------------------------------------
-  // 3. GET CURRENT PAGE
-  // ----------------------------------------------------------
+  archive.currentPage = Math.max(
+    1,
+    Math.min(archive.currentPage, totalPages || 1),
+  );
+  archive.container?.setAttribute("data-view", archive.viewMode);
 
   const pageProjects = getCurrentPage(filteredProjects);
-  // ----------------------------------------------------------
-  // 4. RENDER CARDS
-  // ----------------------------------------------------------
   renderCards(pageProjects);
-  // ----------------------------------------------------------
-  // 5. RENDER PAGINATION
-  // ----------------------------------------------------------
-  renderPagination(totalPages);
-  /* -------------------------------------------
-  __ 6.
-  //,,-------------------------------------------*/
+  renderPagination(archive.viewMode === "randomizer" ? 0 : totalPages);
+  updateFilterVisibility();
+  updateTigerPadding();
 }
 
-// ============================================================
-// FILTER
-// ============================================================
-//update the archive.filters
+function updateViewControls() {
+  document.querySelectorAll("[data-view-control]").forEach((control) => {
+    control.hidden = control.dataset.viewControl !== archive.viewMode;
+  });
 
+  const gridSlider = document.querySelector("#gridSlider");
+  const rowSlider = document.querySelector("#rowSlider");
+  if (gridSlider && archive.container) {
+    archive.container.style.setProperty("--grid-columns", gridSlider.value);
+  }
+
+  if (rowSlider && archive.container) {
+    archive.container.style.setProperty("--list-row-size", `${rowSlider.value}px`);
+  }
+}
+
+function updateFilterVisibility() {
+  const filterParent = document.querySelector(".filter--parent");
+  const shouldHide = archive.viewMode === "randomizer";
+
+  filterParent?.classList.toggle("is-view-hidden", shouldHide);
+}
+
+function setupViewSliders() {
+  const gridSlider = document.querySelector("#gridSlider");
+  const gridValue = document.querySelector("#gridValue");
+  gridSlider?.addEventListener("input", () => {
+    archive.container?.style.setProperty("--grid-columns", gridSlider.value);
+    if (gridValue) {
+      gridValue.textContent = gridSlider.value;
+    }
+  });
+
+  const rowSlider = document.querySelector("#rowSlider");
+  const rowValue = document.querySelector("#rowValue");
+  rowSlider?.addEventListener("input", () => {
+    archive.container?.style.setProperty("--list-row-size", `${rowSlider.value}px`);
+    if (rowValue) {
+      rowValue.textContent = rowSlider.value;
+    }
+  });
+
+}
+
+/* -------------------------------------------
+__
+//,, SEARCH AND FILTER MATCHING
+//,,-------------------------------------------*/
 function getFilteredProjects() {
   return archive.projects.filter((project) => {
-    const bull = matchesFilters(project) && matchesSearch(project);
-    // add the faceted filter stuff
-    if (bull) updateFaceted(project);
-    return bull;
+    const matches = matchesFilters(project) && matchesSearch(project);
+
+    if (matches) {
+      updateFaceted(project);
+    }
+
+    return matches;
   });
 }
 
-// ============================================================
-// FILTER MATCHING
-// ============================================================
+function matchesFilters(project) {
+  return Object.entries(archive.filters).every(([group, values]) => {
+    if (!values || values.length === 0) return true;
+    return values.every((value) => project.filters[group].includes(value));
+  });
+}
+
+function matchesSearch(project) {
+  if (!archive.search) {
+    return true;
+  }
+
+  return searchCols.some((column) =>
+    project.searchs[column.name]
+      ?.toLowerCase()
+      .includes(archive.search.toLowerCase()),
+  );
+}
+
+/* -------------------------------------------
+__
+//,, FILTER DISPLAY AND CONTROLS
+//,,-------------------------------------------*/
 function updateFilterActive(filters) {
-  let b = document.querySelector(".filter__actives");
-  b.innerHTML = "";
-  const Ftemp = Object.entries(filters)
+  const activeContainer = document.querySelector(".filter__actives");
+
+  if (!activeContainer) {
+    return;
+  }
+
+  activeContainer.innerHTML = "";
+
+  const markup = Object.entries(filters)
     .map(([group, values]) =>
       values
         .map(
-          (f) => /*HTML */ `
-      <button class="filter__actives__item" data-group="${group}" data-filter="${f}">
-      <span>×</span>${f}
-      </button> 
-      `,
+          (filterValue) => `
+            <button class="filter__actives__item" data-group="${group}" data-filter="${filterValue}">
+              <span>×</span>${filterValue}
+            </button>
+          `,
         )
         .join(""),
     )
     .join("");
 
-  b.append(createHTMLfragment(Ftemp));
+  activeContainer.append(createHTMLfragment(markup));
 }
-/* -------------------------------------------
-__ update helpers
-//,,-------------------------------------------*/
 
 function toggleFilterSearch() {
-  temp = document.querySelector(".filter--parent");
-  temp2 = document.querySelector(".filter__clps");
-  tempHideBtn = document.querySelector(".filter__hide");
-  tempSpan = temp2.querySelector("span");
-  temp.classList.toggle("active");
-  temp2.classList.toggle("active");
-  tempHideBtn.classList.toggle("active");
-  //if its active
-  temp2.classList.contains("active")
-    ? (temp2.innerHTML = `<span>${closeSign}</span>Close Search & Filters Bar`)
-    : (temp2.innerHTML = `<span>${expandSign}</span>Open Search & Filters Bar`);
+  const filterParent = document.querySelector(".filter--parent");
+  const collapseButton = document.querySelector(".filter__clps");
+  const hideButton = document.querySelector(".filter__hide");
+  if (!filterParent || !collapseButton || !hideButton) {
+    return;
+  }
+  filterParent.classList.toggle("active");
+  collapseButton.classList.toggle("active");
+  hideButton.classList.toggle("active");
+
+  const isOpen = collapseButton.classList.contains("active");
+  collapseButton.innerHTML = `<span>${isOpen ? closeSign : expandSign}</span>${isOpen ? "Close Search & Filters Bar" : "Open Search & Filters Bar"}`;
 }
+
 function activeFilterSearch() {
-  temp = document.querySelector(".filter--parent");
-  temp2 = document.querySelector(".filter__clps");
-  temp.classList.add("active");
-  temp2.classList.add("active");
-}
-function removeFilterActive(group, value) {
-  const tempR = document.querySelector(
-    `.filtermenu__item[data-group="${group}"][data-value="${value}"]`,
-  );
-  if (tempR) tempR.classList.remove("active");
-}
-function updateCounter(n) {
-  const temp = document.querySelector("#filterCount");
-  temp.innerHTML = `${n}`;
-}
-function updateFaceted(card) {
-  Object.entries(card.filters).forEach(([group, values]) => {
-    values
-      .split(",")
-      .map((value) => value.trim())
-      .forEach((value) => {
-        if (
-          !facetedFilters[group].includes(value) &&
-          value !== "null" &&
-          value != null
-        ) {
-          facetedFilters[group].push(value);
-        }
-      });
-  });
-}
-function updateTigerPadding() {
-  const tiger = document.querySelector(".tiger");
-  const headerH = document.querySelector(`.header`);
-  const filterP = document.querySelector(`.filter--parent`);
-  tiger.style.paddingTop = `${headerH.offsetHeight + filterP.offsetHeight}px`;
-}
+  const filterParent = document.querySelector(".filter--parent");
+  const collapseButton = document.querySelector(".filter__clps");
 
-/* -------------------------------------------
-__ matches
-//,,-------------------------------------------*/
-
-function matchesFilters(project) {
-  return Object.entries(archive.filters).every(([group, values]) => {
-    // no filters selected
-    if (values.length === 0) return true;
-    // if no filters
-    return values.every((value) => project.filters[group].includes(value));
-  });
-}
-function matchesSearch(project) {
-  if (!archive.search) {
-    return true;
-  }
-  return searchCols.some((column) => {
-    return project.searchs[column.name]
-      ?.toLowerCase()
-      .includes(archive.search.toLowerCase());
-  });
-}
-
-// ============================================================
-// PAGINATION
-// ============================================================
-
-function getCurrentPage(projects) {
-  const start = (archive.currentPage - 1) * archive.perPage;
-
-  return projects.slice(start, start + archive.perPage);
-}
-
-// ============================================================
-// RENDER CARDS
-// ============================================================
-function renderCards(projects) {
-  // Remove the old page
-  archive.container.replaceChildren();
-
-  // Create everything off-DOM
-  const fragment = document.createDocumentFragment();
-
-  for (const project of projects) {
-    const card = createCard(project);
-
-    fragment.append(card);
-  }
-
-  // One DOM insertion
-  archive.container.append(fragment);
-}
-
-// ============================================================
-// CREATE CARD
-// ============================================================
-
-function createCard(project) {
-  const card = document.createElement("article");
-  card.className = "archivecard__container";
-  card.dataset.slug = project.slug;
-  card.dataset.title = project.title;
-  card.innerHTML = /* HTML */ `
-    <div class="thumbnail__container">
-      ${project.thumbnail
-        ? `<img
-        class="thumbnail__img"
-              src="${project.thumbnail}"
-              alt=""
-              loading="lazy"
-              decoding="async"
-            >`
-        : ""}
-    </div>
-    <div class="infocard">
-      <div class="infocard__title">${project.title}</div>
-      <div class="infocard__tags">${project.year}</div>
-    </div>
-    <div class="infocard__des">${project.desc}</div>
-  `;
-
-  return card;
-}
-
-// ============================================================
-// PAGINATION UI
-// ============================================================
-
-function renderPagination(totalPages) {
-  archive.pagination.replaceChildren();
-
-  // No pagination needed
-  if (totalPages <= 1) {
+  if (!filterParent || !collapseButton) {
     return;
   }
 
-  const fragment = document.createDocumentFragment();
-
-  // ----------------------------------------------------------
-  // PREVIOUS
-  // ----------------------------------------------------------
-
-  const previous = document.createElement("button");
-
-  previous.type = "button";
-  previous.className = "pagination__previous";
-  previous.dataset.pageAction = "previous";
-  previous.textContent = "Previous Page";
-
-  previous.disabled = archive.currentPage === 1;
-
-  fragment.append(previous);
-
-  // ----------------------------------------------------------
-  // PAGE NUMBERS
-  // ----------------------------------------------------------
-
-  for (let page = 1; page <= totalPages; page++) {
-    const button = document.createElement("button");
-
-    button.type = "button";
-    button.className = "pagination__page";
-
-    button.dataset.page = page;
-
-    button.textContent = page;
-
-    if (page === archive.currentPage) {
-      button.classList.add("active");
-      button.setAttribute("aria-current", "page");
-    }
-
-    fragment.append(button);
-  }
-
-  // ----------------------------------------------------------
-  // NEXT
-  // ----------------------------------------------------------
-
-  const next = document.createElement("button");
-
-  next.type = "button";
-  next.className = "pagination__next";
-  next.dataset.pageAction = "next";
-  next.textContent = "Next Page";
-
-  next.disabled = archive.currentPage === totalPages;
-
-  fragment.append(next);
-
-  archive.pagination.append(fragment);
+  filterParent.classList.add("active");
+  collapseButton.classList.add("active");
 }
 
-// ============================================================
-// EVENTS
-// ============================================================
+function removeFilterActive(group, value) {
+  const activeButton = document.querySelector(
+    `.filtermenu__item[data-group="${group}"][data-value="${value}"]`,
+  );
 
-function setupEvents() {
-  // ----------------------------------------------------------
-  // CARD CLICK
-  //
-  // ONE listener for all cards.
-  // ----------------------------------------------------------
+  if (activeButton) {
+    activeButton.classList.remove("active");
+  }
+}
 
-  archive.container.addEventListener("click", (event) => {
-    const card = event.target.closest(".archivecard__container");
+function updateCounter(count) {
+  const counter = document.querySelector("#filterCount");
 
-    if (!card) {
-      return;
-    }
+  if (counter) {
+    counter.textContent = String(count);
+  }
+}
 
-    const slug = card.dataset.slug;
+function updateFaceted(card) {
+  Object.entries(card.filters).forEach(([group, values]) => {
+    const items = String(values)
+      .split(",")
+      .map((value) => value.trim())
+      .filter((value) => value && value !== "null");
 
-    if (!slug) {
-      return;
-    }
-
-    window.location.href = `/orbit-archivepage#${slug}`;
-  });
-
-  //deactive backdrop + the thing
-
-  // filters shit
-  /* -------------------------------------------
-  __ all the filter-events
-  //,,-------------------------------------------*/
-
-  const filterContainer = document.querySelector(".filter--container");
-  filterContainer.addEventListener("click", (event) => {
-    const filterBtn = event.target.closest(".filtermenu__item");
-    // filterBtn to update the archive cards
-    if (filterBtn) {
-      event.preventDefault();
-      restoreF();
-      const filterCat = filterBtn.dataset.value;
-      const filterGroup = filterBtn.dataset.group;
-      //already active
-      if (filterBtn.classList.contains("active")) {
-        archive.filters[filterGroup] = archive.filters[filterGroup].filter(
-          (item) => item !== filterCat,
-        );
-        activeFilters = activeFilters.filter((b) => b != filterCat);
-      } else {
-        archive.filters[filterGroup].push(filterCat);
-        activeFilters.push(filterCat);
+    items.forEach((value) => {
+      if (!facetedFilters[group].includes(value)) {
+        facetedFilters[group].push(value);
       }
-      ////
-      filterBtn.classList.toggle("active");
-      renderArchive();
-      updateFilterZero();
-    }
-    // filter menus toggles
-    const filterToggleBtn = event.target.closest(".filter__toggles--btn");
-    if (filterToggleBtn) {
-      const group = filterToggleBtn.dataset.group;
-      const menu = document.querySelector(`.filtermenu[data-group="${group}"]`);
-      if (!filterToggleBtn.classList.contains("selected")) {
-        menu.classList.toggle("active");
-        filterToggleBtn.classList.toggle("active");
-        if (menu.classList.contains("active")) activeFilterCountToggle++;
-        else activeFilterCountToggle--;
-        //for the css
-        setColumns(activeFilterCountToggle);
-      }
-    }
-    /* -------------------------------------------
-    __ filtergroup collapsing
-    //,,-------------------------------------------*/
-    const filterGroup = event.target.closest(".filtermenu__group--btn");
-    if (filterGroup) {
-      console.log("b");
-      const group = filterGroup.dataset.group;
-      const tri = filterGroup.querySelector(".tri");
-      const filterMenu = document.querySelector(
-        `.filtermenu__items[data-group="${group}"]`,
-      );
-      filterMenu.classList.toggle("active");
-      filterGroup.classList.toggle("active");
-      filterGroup.classList.contains("active")
-        ? (tri.innerHTML = "▲")
-        : (tri.innerHTML = "▼");
-    }
-    const filterClpsBtn = event.target.closest(".filter__clps");
-    if (filterClpsBtn) {
-      toggleFilterSearch();
-      // temp = document.querySelector(".filter--parent");
-      // temp.classList.toggle("active");
-      // filterClpsBtn.classList.toggle("active");
-    }
-    /* -------------------------------------------
-    __ filter clear
-    //,,-------------------------------------------*/
-    const filterClear = event.target.closest(".filter__clear");
-    if (filterClear) clearFilters();
-
-    /* -------------------------------------------
-    __ active filters x button
-    //,,-------------------------------------------*/
-    const filteractivebtn = event.target.closest(".filter__actives__item");
-    if (filteractivebtn) {
-      const filtergroup = filteractivebtn.dataset.group;
-      const filtercat = filteractivebtn.dataset.filter;
-      archive.filters[filtergroup] = archive.filters[filtergroup].filter(
-        (item) => item !== filtercat,
-      );
-      removeFilterActive(filtergroup, filtercat);
-      renderArchive();
-      updateFilterZero();
-    }
-    /* -------------------------------------------
-    __ Hide Filter Bar
-    //,,-------------------------------------------*/
-    const filterHide = event.target.closest(".filter__hide");
-    if (filterHide) {
-      const tempGrid = document.querySelector(".filter__grid");
-      console.log(tempGrid);
-      tempGrid.classList.toggle("collapse");
-      tempGrid.classList.contains("collapse")
-        ? filterHide.innerHTML.replace("Hide", "Show")
-        : filterHide.innerHTML.replace("Show", "Hide");
-    }
-  });
-  // fcosu
-  filterContainer.addEventListener("focusin", (event) => {
-    const filterBtn = event.target.closest("#searchInput");
-    // If the focused element isn't part of a filter button, stop
-    if (!filterBtn) return;
-    // Do what you want when the button gets focus
-    activeFilterSearch();
-  });
-  // keydown
-  filterContainer.addEventListener("keydown", (event) => {
-    if (event.key !== "Enter" && event.key !== "Escape") return;
-    const filterBtn = event.target.closest("#searchInput");
-    if (!filterBtn) return;
-    event.preventDefault();
-    toggleFilterSearch();
-    filterBtn.blur();
-  });
-
-  /* -------------------------------------------
-__ slider thing
-//,,-------------------------------------------*/
-  const slider = document.querySelector("#gridSlider");
-  slider.addEventListener("input", () => {
-    const tiger = document.querySelector(".tiger");
-    const gridValue = document.querySelector("#gridValue");
-    const columns = slider.value;
-    tiger.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
-    gridValue.textContent = columns;
-  });
-  /* -------------------------------------------
-__ 
-//,,-------------------------------------------*/
-
-  /* -------------------------------------------
-  __ collapse
-  //,,-------------------------------------------*/
-
-  // ----------------------------------------------------------
-  // PAGINATION CLICK
-  //
-  // ONE listener for all pagination buttons.
-  // ----------------------------------------------------------
-
-  archive.pagination.addEventListener("click", (event) => {
-    const pageButton = event.target.closest("[data-page]");
-
-    if (pageButton) {
-      archive.currentPage = Number(pageButton.dataset.page);
-
-      renderArchive();
-
-      return;
-    }
-    const actionButton = event.target.closest("[data-page-action]");
-
-    if (!actionButton) {
-      return;
-    }
-    const action = actionButton.dataset.pageAction;
-
-    if (action === "previous") {
-      archive.currentPage--;
-    } else if (action === "next") {
-      archive.currentPage++;
-    }
-
-    renderArchive();
-  });
-
-  // ----------------------------------------------------------
-  // SEARCH
-  // ----------------------------------------------------------
-
-  if (archive.searchInput) {
-    archive.searchInput.addEventListener("input", (event) => {
-      archive.search = event.target.value;
-
-      // Search results always start
-      // from page 1.
-
-      archive.currentPage = 1;
-
-      renderArchive();
     });
-  }
-}
-// ============================================================
-// FILTER API
-// ============================================================
-function updateFilterZero() {
-  const filters = document.querySelectorAll(".filtermenu__item");
-  filters.forEach((filter) => {
-    const filterCat = filter.dataset.value;
-    if (!facetedFilters[filter.dataset.group].includes(filterCat)) {
-      filter.classList.add("zero");
-    } else {
-      filter.classList.remove("zero");
-    }
   });
 }
+
+function updateTigerPadding() {
+  const tiger = document.querySelector(".tiger");
+  const header = document.querySelector(".header");
+  const filterParent = document.querySelector(".filter--parent");
+
+  if (!tiger || !header || !filterParent) {
+    return;
+  }
+
+  tiger.style.paddingTop = `${header.offsetHeight + filterParent.offsetHeight}px`;
+}
+
+/* -------------------------------------------
+__
+//,, FILTER STATE ACTIONS
+//,,-------------------------------------------*/
 function setFilter(group, value, active) {
-  // Create the Set if it doesn't exist
   if (!archive.filters[group]) {
-    archive.filters[group] = new Set();
+    archive.filters[group] = [];
   }
-  const values = archive.filters[group];
+
   if (active) {
-    values.add(value);
+    if (!archive.filters[group].includes(value)) {
+      archive.filters[group].push(value);
+    }
   } else {
-    values.delete(value);
+    archive.filters[group] = archive.filters[group].filter(
+      (item) => item !== value,
+    );
   }
-  // ----------------------------------------------------------
-  // Remove empty filter groups
-  // ----------------------------------------------------------
-  if (values.size === 0) {
+
+  if (archive.filters[group].length === 0) {
     delete archive.filters[group];
   }
-  // ----------------------------------------------------------
-  // ALWAYS return to page 1 after filtering
-  // ----------------------------------------------------------
+
   archive.currentPage = 1;
   renderArchive();
 }
-// ============================================================
-// CLEAR ALL FILTERS
-// ============================================================
+
 function clearFilters() {
-  tempS = document.querySelector("#searchInput");
-  tempS.value = "";
+  const searchInput = document.querySelector("#searchInput");
+
+  if (searchInput) {
+    searchInput.value = "";
+  }
+
   archive.search = "";
   archive.currentPage = 1;
   restoreFilters();
@@ -749,88 +501,340 @@ function clearFilters() {
   renderArchive();
   updateFilterZero();
 }
-// ============================================================
-// CHANGE ITEMS PER PAGE
-// ============================================================
-//usefull
+
 function setPerPage(amount) {
   archive.perPage = amount;
   archive.currentPage = 1;
   renderArchive();
 }
+
+function updateFilterZero() {
+  const filterItems = document.querySelectorAll(".filtermenu__item");
+
+  filterItems.forEach((filter) => {
+    const group = filter.dataset.group;
+    const value = filter.dataset.value;
+    const isAvailable = facetedFilters[group]?.includes(value);
+
+    filter.classList.toggle("zero", !isAvailable);
+  });
+}
+
 /* -------------------------------------------
-__ filters init and generate
+__
+//,, EVENT HANDLERS
+//,,-------------------------------------------*/
+function setupEvents() {
+  if (archive.container) {
+    archive.container.addEventListener("click", (event) => {
+      const spinButton = event.target.closest("[data-action='spin']");
+      if (spinButton) {
+        spinRandomizer();
+        return;
+      }
+
+      const card = event.target.closest(".archivecard__container");
+
+      if (!card) {
+        return;
+      }
+
+      const slug = card.dataset.slug;
+
+      if (!slug) {
+        return;
+      }
+
+      window.location.href = `/orbit-archivepage#${slug}`;
+    });
+  }
+
+  const viewButtons = document.querySelector(".viewbtn--container");
+  if (viewButtons) {
+    viewButtons.addEventListener("click", (event) => {
+      const viewButton = event.target.closest(".view__btn[data-view]");
+      if (!viewButton) {
+        return;
+      }
+
+      archive.viewMode = viewButton.dataset.view;
+      archive.currentPage = 1;
+      archive.randomizedProjects = [];
+      cancelRandomizerSpin();
+
+      viewButtons.querySelectorAll(".view__btn[data-view]").forEach((button) => {
+        const isActive = button === viewButton;
+        button.classList.toggle("active", isActive);
+        button.setAttribute("aria-pressed", String(isActive));
+      });
+
+      updateViewControls();
+      updateFilterVisibility();
+
+      renderArchive();
+    });
+  }
+
+  const filterContainer = document.querySelector(".filter--container");
+
+  if (filterContainer) {
+    filterContainer.addEventListener("click", (event) => {
+      const filterBtn = event.target.closest(".filtermenu__item");
+
+      if (filterBtn) {
+        event.preventDefault();
+        restoreF();
+
+        const filterCat = filterBtn.dataset.value;
+        const filterGroup = filterBtn.dataset.group;
+        const isActive = filterBtn.classList.contains("active");
+
+        if (isActive) {
+          archive.filters[filterGroup] = (
+            archive.filters[filterGroup] || []
+          ).filter((item) => item !== filterCat);
+          activeFilters = activeFilters.filter((item) => item !== filterCat);
+        } else {
+          archive.filters[filterGroup] = [
+            ...(archive.filters[filterGroup] || []),
+            filterCat,
+          ];
+          activeFilters.push(filterCat);
+        }
+
+        filterBtn.classList.toggle("active", !isActive);
+        renderArchive();
+        updateFilterZero();
+        return;
+      }
+
+      const filterToggleBtn = event.target.closest(".filter__toggles--btn");
+      if (filterToggleBtn) {
+        const group = filterToggleBtn.dataset.group;
+        const menu = document.querySelector(
+          `.filtermenu[data-group="${group}"]`,
+        );
+
+        if (menu) {
+          const isSelected = filterToggleBtn.classList.contains("selected");
+          menu.classList.toggle("active", !isSelected);
+          filterToggleBtn.classList.toggle("active", !isSelected);
+
+          if (menu.classList.contains("active")) {
+            activeFilterCountToggle += 1;
+          } else {
+            activeFilterCountToggle = Math.max(0, activeFilterCountToggle - 1);
+          }
+
+          setColumns(activeFilterCountToggle);
+        }
+        return;
+      }
+
+      const filterGroupButton = event.target.closest(".filtermenu__group--btn");
+      if (filterGroupButton) {
+        const group = filterGroupButton.dataset.group;
+        const tri = filterGroupButton.querySelector(".tri");
+        const filterMenu = document.querySelector(
+          `.filtermenu__items[data-group="${group}"]`,
+        );
+
+        if (tri && filterMenu) {
+          filterMenu.classList.toggle("active");
+          filterGroupButton.classList.toggle("active");
+          tri.textContent = filterGroupButton.classList.contains("active")
+            ? "▲"
+            : "▼";
+        }
+        return;
+      }
+
+      const filterCollapseButton = event.target.closest(".filter__clps");
+      if (filterCollapseButton) {
+        toggleFilterSearch();
+        return;
+      }
+
+      const filterClearButton = event.target.closest(".filter__clear");
+      if (filterClearButton) {
+        clearFilters();
+        return;
+      }
+
+      const activeFilterButton = event.target.closest(".filter__actives__item");
+      if (activeFilterButton) {
+        const filterGroup = activeFilterButton.dataset.group;
+        const filterCat = activeFilterButton.dataset.filter;
+
+        archive.filters[filterGroup] = (
+          archive.filters[filterGroup] || []
+        ).filter((item) => item !== filterCat);
+        removeFilterActive(filterGroup, filterCat);
+        renderArchive();
+        updateFilterZero();
+        return;
+      }
+
+      const hideFilterButton = event.target.closest(".filter__hide");
+      if (hideFilterButton) {
+        const tempGrid = document.querySelector(".filter__grid");
+
+        if (tempGrid) {
+          tempGrid.classList.toggle("collapse");
+          const isCollapsed = tempGrid.classList.contains("collapse");
+          hideFilterButton.innerHTML = isCollapsed
+            ? "<span>🫣</span>Show Search Bar"
+            : "<span>🫣</span>Hide Search Bar";
+        }
+      }
+    });
+
+    filterContainer.addEventListener("focusin", (event) => {
+      const searchInput = event.target.closest("#searchInput");
+
+      if (searchInput) {
+        activeFilterSearch();
+      }
+    });
+
+    filterContainer.addEventListener("keydown", (event) => {
+      const searchInput = event.target.closest("#searchInput");
+
+      if (!searchInput) {
+        return;
+      }
+
+      if (event.key === "Enter" || event.key === "Escape") {
+        event.preventDefault();
+        toggleFilterSearch();
+        searchInput.blur();
+      }
+    });
+  }
+
+  setupViewSliders();
+
+  if (archive.pagination) {
+    archive.pagination.addEventListener("click", (event) => {
+      const pageButton = event.target.closest("[data-page]");
+
+      if (pageButton) {
+        archive.currentPage = Number(pageButton.dataset.page);
+        renderArchive();
+        return;
+      }
+
+      const actionButton = event.target.closest("[data-page-action]");
+
+      if (!actionButton) {
+        return;
+      }
+
+      const action = actionButton.dataset.pageAction;
+
+      if (action === "previous") {
+        archive.currentPage -= 1;
+      } else if (action === "next") {
+        archive.currentPage += 1;
+      }
+
+      renderArchive();
+    });
+  }
+
+  if (archive.searchInput) {
+    archive.searchInput.addEventListener("input", (event) => {
+      archive.search = event.target.value;
+      archive.currentPage = 1;
+      renderArchive();
+    });
+  }
+}
+
+/* -------------------------------------------
+__
+//,, FILTER MENU GENERATION
 //,,-------------------------------------------*/
 function initFilters() {
   filterItems = [];
-  filterCols.forEach((c) => {
+
+  filterCols.forEach((column) => {
     filterItems.push({
-      group: c.name,
-      id: `f-${c.col}`,
-      data: getallfilters(c.col),
+      group: column.name,
+      id: `f-${column.col}`,
+      data: getAllFilters(column.col),
     });
   });
+
   generateFilters();
 }
-function getallfilters(row) {
+
+function getAllFilters(columnKey) {
   return [
     ...new Set(
-      data.flatMap(
-        (item) =>
-          String(item[row])
-            ?.split(",")
-            .map((tag) => tag.trim())
-            .filter((tag) => tag !== "null") || [],
-      ),
+      data.flatMap((item) => {
+        const value = item[columnKey];
+
+        if (!value) {
+          return [];
+        }
+
+        return String(value)
+          .split(",")
+          .map((tag) => tag.trim())
+          .filter((tag) => tag && tag !== "null");
+      }),
     ),
   ].sort();
 }
+
 function generateFilters() {
-  //generate the filters
-  let allFilters = filterItems
-    .map((f, index) => {
-      const itemsHTML = f.data
+  const filterContainer = document.querySelector(".filter--container");
+
+  if (!filterContainer) {
+    return;
+  }
+
+  const allFilters = filterItems
+    .map((filterDef, index) => {
+      const itemsHTML = filterDef.data
         .map(
-          (item) =>
-            /* HTML */ ` <div
-              class="filtermenu__item ${f.id}"
-              data-group="${f.group}"
-              data-value="${item.trim()}"
-            >
+          (item) => `
+            <div class="filtermenu__item ${filterDef.id}" data-group="${filterDef.group}" data-value="${item.trim()}">
               ${item}
-            </div>`,
+            </div>
+          `,
         )
         .join("");
-      const fly = /* HTML */ `
-        <div class="filtermenu" data-group="${f.group}">
+
+      return `
+        <div class="filtermenu" data-group="${filterDef.group}">
           <div class="filtermenu--container">
             <div>
-              <button class="filtermenu__group--btn" data-group="${f.group}">
+              <button class="filtermenu__group--btn" data-group="${filterDef.group}">
                 ${filterCols[index].name}<span class="tri">▼</span>
               </button>
             </div>
-            <div class="filtermenu__items" data-group="${f.group}">
+            <div class="filtermenu__items" data-group="${filterDef.group}">
               ${itemsHTML}
             </div>
           </div>
         </div>
       `;
-      return fly;
     })
     .join("");
-  let filterToggles = filterItems
-    .map((f) => {
-      const toggle = /* HTML */ `<button
-        class="filter__toggles--btn"
-        data-group="${f.group}"
-      >
-        ${f.group}
-      </button>`;
-      return toggle;
-    })
+
+  const filterToggles = filterItems
+    .map(
+      (filterDef) => `
+        <button class="filter__toggles--btn" data-group="${filterDef.group}">
+          ${filterDef.group}
+        </button>
+      `,
+    )
     .join("");
-  // genereate the element
-  const filterTemp = createHTMLfragment(/* HTML */ `
+
+  const filterMarkup = `
     <div class="filter__clps--container">
       <div class="filter__clps--left">
         <button class="filter__clps">
@@ -851,13 +855,7 @@ function generateFilters() {
       </div>
       <div class="filter__search">
         <div class="filter__search--container">
-          <input
-            id="searchInput"
-            type="text"
-            placeholder="Search..."
-            autocomplete="off"
-          />
-
+          <input id="searchInput" type="text" placeholder="Search..." autocomplete="off" />
           <span class="search-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none">
               <circle cx="10.5" cy="10.5" r="6.5"></circle>
@@ -866,7 +864,6 @@ function generateFilters() {
           </span>
         </div>
       </div>
-
       <div class="filters--parent active">
         <div class="filter__actives--container">
           <div class="filter__actives"></div>
@@ -874,13 +871,288 @@ function generateFilters() {
         <div class="filters--container active">${allFilters}</div>
       </div>
     </div>
-  `);
-  document.querySelector(".filter--container").append(filterTemp);
+  `;
+
+  filterContainer.append(createHTMLfragment(filterMarkup));
 }
 
 /* -------------------------------------------
-__ helpers
+__
+//,, CARD AND PAGINATION RENDERING
+//,,-------------------------------------------*/
+function getCurrentPage(projects) {
+  const start = (archive.currentPage - 1) * archive.perPage;
+  return projects.slice(start, start + archive.perPage);
+}
 
+function renderCards(projects) {
+  if (!archive.container) {
+    return;
+  }
+
+  archive.container.replaceChildren();
+
+  if (archive.viewMode === "randomizer") {
+    renderRandomizer(archive.filteredProjects);
+    return;
+  }
+
+  const fragment = document.createDocumentFragment();
+
+  projects.forEach((project) => {
+    fragment.append(createCard(project));
+  });
+
+  archive.container.append(fragment);
+}
+
+function renderRandomizer(projects) {
+  if (
+    archive.randomizedProjects.some(
+      (project) => !projects.includes(project),
+    )
+  ) {
+    archive.randomizedProjects = [];
+  }
+
+  const machine = document.createElement("section");
+  machine.className = "archive-slot-machine";
+  machine.setAttribute("aria-label", "Random project picker");
+
+  const animation = document.createElement("video");
+  animation.className = "archive-slot-machine__animation";
+  animation.setAttribute("aria-hidden", "true");
+  animation.muted = true;
+  animation.playsInline = true;
+  animation.preload = "none";
+  animation.hidden = true;
+  machine.append(animation);
+
+  const spinButton = document.createElement("button");
+  const isSpinning = Boolean(archive.randomizerTimer);
+  spinButton.type = "button";
+  spinButton.className = "archive-slot-machine__spin";
+  spinButton.dataset.action = "spin";
+  spinButton.textContent = isSpinning
+    ? "Spinning..."
+    : projects.length
+      ? "Spin for a project"
+      : "No projects to spin";
+  spinButton.disabled = isSpinning || projects.length === 0;
+  machine.classList.toggle("is-spinning", isSpinning);
+  animation.hidden = !isSpinning || !archiveSpinAnimationSource;
+  machine.append(spinButton);
+
+  const reels = document.createElement("div");
+  reels.className = "archive-slot-machine__reels";
+  reels.setAttribute("aria-live", "polite");
+
+  if (archive.randomizedProjects.length > 0) {
+    archive.randomizedProjects.forEach((project, index) => {
+      const reel = document.createElement("div");
+      reel.className = "archive-slot-machine__reel";
+      reel.setAttribute("aria-label", `Random pick ${index + 1}`);
+      reel.append(createCard(project));
+      reels.append(reel);
+    });
+  } else if (projects.length > 0) {
+    for (let index = 0; index < Math.min(3, projects.length); index += 1) {
+      const reel = document.createElement("div");
+      reel.className = "archive-slot-machine__reel archive-slot-machine__symbol";
+      reel.setAttribute("aria-hidden", "true");
+      reel.textContent = "✦";
+      reels.append(reel);
+    }
+  } else {
+    const prompt = document.createElement("p");
+    prompt.className = "archive-slot-machine__prompt";
+    prompt.textContent = "No projects match the current search and filters.";
+    reels.append(prompt);
+  }
+
+  machine.append(reels);
+  archive.container.append(machine);
+}
+
+function spinRandomizer() {
+  if (!archive.filteredProjects.length || archive.randomizerTimer) {
+    return;
+  }
+
+  const machine = archive.container?.querySelector(".archive-slot-machine");
+  const spinButton = machine?.querySelector("[data-action='spin']");
+  if (!machine || !spinButton) {
+    return;
+  }
+
+  machine.classList.add("is-spinning");
+  spinButton.disabled = true;
+  spinButton.textContent = "Spinning...";
+
+  const animation = machine.querySelector(".archive-slot-machine__animation");
+  if (archiveSpinAnimationSource && animation) {
+    animation.hidden = false;
+    animation.src = archiveSpinAnimationSource;
+    animation.currentTime = 0;
+    animation.load();
+    animation.onended = finishRandomizerSpin;
+    animation.onerror = () => {
+      console.error("Unable to load the randomizer video animation.");
+      finishRandomizerSpin();
+    };
+    animation.play().catch((error) => {
+      console.error("Unable to play the randomizer video animation:", error);
+      finishRandomizerSpin();
+    });
+  }
+
+  archive.randomizerTimer = window.setTimeout(() => {
+    finishRandomizerSpin();
+  }, archiveSpinAnimationSource ? 15000 : 1200);
+}
+
+function finishRandomizerSpin() {
+  if (!archive.randomizerTimer || archive.viewMode !== "randomizer") {
+    return;
+  }
+
+  window.clearTimeout(archive.randomizerTimer);
+  archive.randomizerTimer = null;
+  archive.randomizedProjects = pickRandomProjects(archive.filteredProjects, 3);
+  renderArchive();
+}
+
+function cancelRandomizerSpin() {
+  window.clearTimeout(archive.randomizerTimer);
+  archive.randomizerTimer = null;
+
+  const animation = archive.container?.querySelector(
+    ".archive-slot-machine__animation",
+  );
+  if (animation) {
+    animation.pause();
+    animation.removeAttribute("src");
+    animation.load();
+  }
+}
+
+function pickRandomProjects(projects, count) {
+  const remaining = [...projects];
+  const picks = [];
+
+  while (remaining.length > 0 && picks.length < count) {
+    const index = Math.floor(Math.random() * remaining.length);
+    picks.push(remaining.splice(index, 1)[0]);
+  }
+
+  return picks;
+}
+
+function createCard(project) {
+  const card = document.createElement("article");
+  card.className = `archivecard__container archivecard--${archive.viewMode}`;
+  card.dataset.slug = project.slug;
+  card.dataset.title = project.title;
+
+  card.innerHTML = `
+    <div class="thumbnail__container">
+      ${project.thumbnail ? `<img class="thumbnail__img" src="${project.thumbnail}" alt="" loading="lazy" decoding="async">` : ""}
+    </div>
+    <div class="infocard">
+      <div class="infocard__title">${project.title}</div>
+      <div class="infocard__tags">${project.year}</div>
+    </div>
+    <div class="infocard__des">${project.desc}</div>
+  `;
+
+  return card;
+}
+
+function renderPagination(totalPages) {
+  if (!archive.pagination) {
+    return;
+  }
+
+  archive.pagination.replaceChildren();
+
+  if (totalPages <= 1) {
+    return;
+  }
+
+  const fragment = document.createDocumentFragment();
+
+  const previous = document.createElement("button");
+  previous.type = "button";
+  previous.className = "pagination__previous";
+  previous.dataset.pageAction = "previous";
+  previous.textContent = "Previous Page";
+  previous.disabled = archive.currentPage === 1;
+  fragment.append(previous);
+
+  for (let page = 1; page <= totalPages; page += 1) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "pagination__page";
+    button.dataset.page = page;
+    button.textContent = page;
+
+    if (page === archive.currentPage) {
+      button.classList.add("active");
+      button.setAttribute("aria-current", "page");
+    }
+
+    fragment.append(button);
+  }
+
+  const next = document.createElement("button");
+  next.type = "button";
+  next.className = "pagination__next";
+  next.dataset.pageAction = "next";
+  next.textContent = "Next Page";
+  next.disabled = archive.currentPage === totalPages;
+  fragment.append(next);
+
+  archive.pagination.append(fragment);
+}
+
+/* -------------------------------------------
+__
+//,, FILTER RESET AND LAYOUT HELPERS
+//,,-------------------------------------------*/
+function restoreFilters() {
+  archive.filters = createDefaultFilterState();
+  activeFilters = [];
+  const allFilterButtons = document.querySelectorAll(".filtermenu__item");
+
+  allFilterButtons.forEach((button) => {
+    button.classList.remove("active");
+  });
+}
+
+function restoreF() {
+  facetedFilters = createDefaultFilterState();
+}
+
+function updateWindowWidth() {
+  window.addEventListener("resize", () => {
+    window.windowWidth = window.innerWidth;
+  });
+}
+
+function setColumns(count) {
+  const grid = document.querySelector(".filtermenu--container.active");
+
+  if (!grid) {
+    return;
+  }
+
+  grid.style.setProperty("--active-columns", String(count));
+  grid.style.justifyItems = count === 1 ? "start" : "center";
+}
+
+/* -------------------------------------------
+__
+//,, SPREADSHEET DATA HELPERS
 //,,-------------------------------------------*/
 async function fetchSheet(url) {
   const response = await fetch(url);

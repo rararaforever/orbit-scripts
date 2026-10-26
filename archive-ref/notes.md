@@ -1,5 +1,3 @@
-[] add x for the filter button
-
 [] better close and open buttons
 
 [] set offset height of filters to top margin of cards?

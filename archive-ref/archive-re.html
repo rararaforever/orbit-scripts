@@ -54,12 +54,6 @@
         font-style: italic;
         font-display: swap;
       }
-
-      /* =====================
-   orbit-fonts — all @font-face
-   ===================== */
-
-      /* ---- XX Fonts ---- */
       @font-face {
         font-family: xx1;
         src: url("https://cdn.jsdelivr.net/gh/rararaforever/orbit-fonts@main/xx/xxAmour-fort.ttf")
@@ -151,6 +145,16 @@
     <link rel="stylesheet" href="./archive-1.css" />
   </head>
   <body>
+    <div
+      class="archive-loading"
+      id="archiveLoading"
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+    >
+      <span class="archive-loading__spinner" aria-hidden="true"></span>
+      <span class="archive-loading__message">Loading archive...</span>
+    </div>
     <div class="header">
       <div class="header--container">
         <div class="header__title--container">
@@ -173,23 +177,17 @@
       <div class="viewmenu--container">
         <div class="view__title">view toggles</div>
         <div class="viewbtn--container">
-          <div class="viewoptions--container">
-            <label for="gridSlider"
-              >Columns: <span id="gridValue">3</span></label
-            >
-            <input
-              id="gridSlider"
-              type="range"
-              min="1"
-              max="5"
-              value="3"
-              step="1"
-            />
+          <div class="viewoptions--container" data-view-control="grid">
+            <label for="gridSlider">Columns: <span id="gridValue">3</span></label>
+            <input id="gridSlider" type="range" min="1" max="5" value="3" step="1" />
           </div>
-          <button class="view__btn active">░</button>
-          <button class="view__btn">▤</button>
-          <button class="view__btn">fun1</button>
-          <button class="view__btn">fun2</button>
+          <div class="viewoptions--container" data-view-control="list" hidden>
+            <label for="rowSlider">Row size: <span id="rowValue">280</span>px</label>
+            <input id="rowSlider" type="range" min="180" max="500" value="280" step="20" />
+          </div>
+          <button class="view__btn active" type="button" data-view="grid" aria-label="Grid view" aria-pressed="true">Grid</button>
+          <button class="view__btn" type="button" data-view="list" aria-label="List view" aria-pressed="false">List</button>
+          <button class="view__btn" type="button" data-view="randomizer" aria-label="Random project picker" aria-pressed="false">Random</button>
         </div>
       </div>
     </div>
