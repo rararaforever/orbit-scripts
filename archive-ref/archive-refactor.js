@@ -52,7 +52,7 @@ window.filterCols = window.filterCols || [
   { col: "i", name: "medium" },
   { col: "j", name: "programme" },
   { col: "p", name: "tags" },
-  { col: "n", name: "year" },
+  { col: "n", name: "festival year" },
   { col: "l", name: "language" },
   { col: "k", name: "country" },
 ];
@@ -70,7 +70,7 @@ window.searchCols = window.searchCols || [
 ];
 window.cardCols = window.cardCols || [
   { col: "a", name: "title" },
-  { col: "b", name: "credits" },
+  { col: "b", name: "Credits" },
   { col: "e", name: "desc" },
   { col: "o", name: "names relevant" },
   { col: "i", name: "medium" },
@@ -84,7 +84,7 @@ window.activeFilters = window.activeFilters || [];
 
 /* -------------------------------------------
 __
-//,, ARCHIVE SETTINGS
+//,, ARCHIVE SETTINGS/
 //,,-------------------------------------------*/
 let idRow = "u";
 let slugRow = "v";
@@ -92,22 +92,20 @@ let activeFilterCountToggle = 0;
 let expandSign = "⤡";
 let closeSign = "x";
 const archiveLoadingStartedAt = performance.now();
-const archiveLoadingMinimumDuration = 1500;
+const archiveLoadingMinimumDuration = 2000;
+const archiveLoadingFadeDuration = 250;
+const archiveRenderMinimumDuration = 500;
+const archiveWelcomeStorageKey = "reelAsianArchiveWelcomeSeen";
 // Set this to the URL of the video played whenever the randomizer is spun.
 const archiveSpinAnimationSource = "";
+let archiveRenderRequestId = 0;
 
 /* -------------------------------------------
 __
 //,, FILTER STATE
 //,,-------------------------------------------*/
-const createDefaultFilterState = () => ({
-  medium: [],
-  programme: [],
-  tags: [],
-  year: [],
-  language: [],
-  country: [],
-});
+const createDefaultFilterState = () =>
+  Object.fromEntries(filterCols.map(({ name }) => [name, []]));
 
 const selectedFilters = createDefaultFilterState();
 let facetedFilters = createDefaultFilterState();
@@ -132,6 +130,7 @@ const archive = {
   container: document.querySelector(".tiger"),
   pagination: document.querySelector(".pagination"),
   loading: document.querySelector("#archiveLoading"),
+  renderLoading: document.querySelector("#archiveRenderLoading"),
   searchInput: null,
 };
 
@@ -175,12 +174,14 @@ async function initArchive() {
   initFilters();
   archive.searchInput = document.querySelector("#searchInput");
   archive.projects = prepProjects();
+  console.log(archive);
   setupEvents();
   updateViewControls();
   updateFilterVisibility();
-  renderArchive();
+  await renderArchive();
   updateTigerPadding();
   await hideArchiveLoading();
+  showWelcomeDialog();
 }
 
 async function hideArchiveLoading() {
@@ -196,7 +197,44 @@ async function hideArchiveLoading() {
   }
 
   archive.loading.setAttribute("aria-busy", "false");
+  archive.loading.classList.add("is-fading");
+  await new Promise((resolve) =>
+    setTimeout(resolve, archiveLoadingFadeDuration),
+  );
   archive.loading.hidden = true;
+  archive.loading.querySelector("video")?.pause();
+}
+
+function showWelcomeDialog() {
+  const welcomeDialog = document.querySelector("#archiveWelcome");
+
+  if (!welcomeDialog) {
+    return;
+  }
+
+  try {
+    if (window.localStorage.getItem(archiveWelcomeStorageKey)) {
+      return;
+    }
+  } catch (error) {
+    console.error(
+      "Failed to check whether the welcome dialog was seen:",
+      error,
+    );
+  }
+
+  welcomeDialog.addEventListener(
+    "close",
+    () => {
+      try {
+        window.localStorage.setItem(archiveWelcomeStorageKey, "true");
+      } catch (error) {
+        console.error("Failed to save the welcome dialog state:", error);
+      }
+    },
+    { once: true },
+  );
+  welcomeDialog.showModal();
 }
 
 function showArchiveLoadingError() {
@@ -204,15 +242,22 @@ function showArchiveLoadingError() {
     return;
   }
 
-  const message = archive.loading.querySelector(
-    ".archive-loading__message",
-  );
+  const message = archive.loading.querySelector(".archive-loading__message");
 
+  archive.loading.hidden = false;
+  archive.loading.querySelector("video")?.pause();
+  archive.renderLoading?.querySelector("video")?.pause();
+  if (archive.renderLoading) {
+    archive.renderLoading.hidden = true;
+  }
+  archive.container?.removeAttribute("aria-busy");
+  archive.loading.classList.remove("is-fading");
   archive.loading.classList.add("archive-loading--error");
   archive.loading.setAttribute("aria-busy", "false");
 
   if (message) {
-    message.textContent = "Unable to load the archive. Please refresh to try again.";
+    message.textContent =
+      "Unable to load the archive. Please refresh to try again.";
   }
 }
 
@@ -257,7 +302,23 @@ function prepProjects() {
   });
 }
 
-function renderArchive() {
+async function renderArchive() {
+  if (!archive.container) {
+    return;
+  }
+
+  const requestId = ++archiveRenderRequestId;
+  if (archive.renderLoading) {
+    archive.renderLoading.hidden = false;
+    const video = archive.renderLoading.querySelector("video");
+    if (video && (video.hasAttribute("src") || video.querySelector("source"))) {
+      video.play().catch((error) => {
+        console.error("Unable to play the archive render animation:", error);
+      });
+    }
+  }
+  archive.container.setAttribute("aria-busy", "true");
+
   resetFacetedFilters();
 
   const filteredProjects = getFilteredProjects();
@@ -270,13 +331,42 @@ function renderArchive() {
     1,
     Math.min(archive.currentPage, totalPages || 1),
   );
-  archive.container?.setAttribute("data-view", archive.viewMode);
+  archive.container.setAttribute("data-view", archive.viewMode);
 
+  await new Promise((resolve) =>
+    requestAnimationFrame(() => requestAnimationFrame(resolve)),
+  );
+
+  if (requestId !== archiveRenderRequestId) {
+    return;
+  }
+
+  const renderStartedAt = performance.now();
   const pageProjects = getCurrentPage(filteredProjects);
   renderCards(pageProjects);
-  renderPagination(archive.viewMode === "randomizer" ? 0 : totalPages);
+  renderPagination(archive.viewMode === "random" ? 0 : totalPages);
   updateFilterVisibility();
-  updateTigerPadding();
+
+  const remainingDuration =
+    archiveRenderMinimumDuration - (performance.now() - renderStartedAt);
+  if (remainingDuration > 0) {
+    await new Promise((resolve) => setTimeout(resolve, remainingDuration));
+  }
+
+  if (requestId === archiveRenderRequestId) {
+    if (archive.renderLoading) {
+      archive.renderLoading.hidden = true;
+      archive.renderLoading.querySelector("video")?.pause();
+    }
+    archive.container.removeAttribute("aria-busy");
+  }
+}
+
+function requestArchiveRender() {
+  renderArchive().catch((error) => {
+    console.error("❌ Failed to render archive:", error);
+    showArchiveLoadingError();
+  });
 }
 
 function updateViewControls() {
@@ -291,13 +381,23 @@ function updateViewControls() {
   }
 
   if (rowSlider && archive.container) {
-    archive.container.style.setProperty("--list-row-size", `${rowSlider.value}px`);
+    updateListRowSize(rowSlider.value);
   }
+}
+
+function updateListRowSize(size) {
+  if (!archive.container) {
+    return;
+  }
+
+  archive.container.style.setProperty("--list-row-size", `${size}px`);
+  archive.container.classList.toggle("is-compact-rows", Number(size) <= 100);
+  archive.container.dataset.rowSize = size;
 }
 
 function updateFilterVisibility() {
   const filterParent = document.querySelector(".filter--parent");
-  const shouldHide = archive.viewMode === "randomizer";
+  const shouldHide = archive.viewMode === "random";
 
   filterParent?.classList.toggle("is-view-hidden", shouldHide);
 }
@@ -305,6 +405,7 @@ function updateFilterVisibility() {
 function setupViewSliders() {
   const gridSlider = document.querySelector("#gridSlider");
   const gridValue = document.querySelector("#gridValue");
+  /* -------------------- */
   gridSlider?.addEventListener("input", () => {
     archive.container?.style.setProperty("--grid-columns", gridSlider.value);
     if (gridValue) {
@@ -314,13 +415,13 @@ function setupViewSliders() {
 
   const rowSlider = document.querySelector("#rowSlider");
   const rowValue = document.querySelector("#rowValue");
+  /* -------------------- */
   rowSlider?.addEventListener("input", () => {
-    archive.container?.style.setProperty("--list-row-size", `${rowSlider.value}px`);
+    updateListRowSize(rowSlider.value);
     if (rowValue) {
       rowValue.textContent = rowSlider.value;
     }
   });
-
 }
 
 /* -------------------------------------------
@@ -389,30 +490,27 @@ function updateFilterActive(filters) {
 }
 
 function toggleFilterSearch() {
-  const filterParent = document.querySelector(".filter--parent");
-  const collapseButton = document.querySelector(".filter__clps");
-  const hideButton = document.querySelector(".filter__hide");
-  if (!filterParent || !collapseButton || !hideButton) {
-    return;
-  }
-  filterParent.classList.toggle("active");
-  collapseButton.classList.toggle("active");
-  hideButton.classList.toggle("active");
-
-  const isOpen = collapseButton.classList.contains("active");
-  collapseButton.innerHTML = `<span>${isOpen ? closeSign : expandSign}</span>${isOpen ? "Close Search & Filters Bar" : "Open Search & Filters Bar"}`;
+  toggleSearchBar("toggle");
 }
 
-function activeFilterSearch() {
+function toggleSearchBar(state) {
   const filterParent = document.querySelector(".filter--parent");
   const collapseButton = document.querySelector(".filter__clps");
-
-  if (!filterParent || !collapseButton) {
+  // const hideButton = document.querySelector(".filter__hide");
+  const backDrop = document.querySelector(".filter__backdrop");
+  if (!filterParent || !collapseButton || !backDrop) {
     return;
   }
+  filterParent.classList[state]("active");
+  collapseButton.classList[state]("active");
+  // hideButton.classList.toggle("active");
+  backDrop.classList[state]("active");
 
-  filterParent.classList.add("active");
-  collapseButton.classList.add("active");
+  const isOpen = collapseButton.classList.contains("active");
+  collapseButton.innerHTML = `<span class="${isOpen ? "active" : ""}">${isOpen ? closeSign : expandSign}</span>${isOpen ? "Close Search" : "Open Search Bar"}`;
+}
+function activeFilterSearch() {
+  toggleSearchBar("add");
 }
 
 function removeFilterActive(group, value) {
@@ -435,6 +533,8 @@ function updateCounter(count) {
 
 function updateFaceted(card) {
   Object.entries(card.filters).forEach(([group, values]) => {
+    facetedFilters[group] ??= [];
+
     const items = String(values)
       .split(",")
       .map((value) => value.trim())
@@ -451,13 +551,12 @@ function updateFaceted(card) {
 function updateTigerPadding() {
   const tiger = document.querySelector(".tiger");
   const header = document.querySelector(".header");
-  const filterParent = document.querySelector(".filter--parent");
 
-  if (!tiger || !header || !filterParent) {
+  if (!tiger || !header) {
     return;
   }
 
-  tiger.style.paddingTop = `${header.offsetHeight + filterParent.offsetHeight}px`;
+  tiger.style.paddingTop = `${header.offsetHeight}px`;
 }
 
 /* -------------------------------------------
@@ -484,7 +583,7 @@ function setFilter(group, value, active) {
   }
 
   archive.currentPage = 1;
-  renderArchive();
+  requestArchiveRender();
 }
 
 function clearFilters() {
@@ -498,14 +597,14 @@ function clearFilters() {
   archive.currentPage = 1;
   restoreFilters();
   restoreF();
-  renderArchive();
+  requestArchiveRender();
   updateFilterZero();
 }
 
 function setPerPage(amount) {
   archive.perPage = amount;
   archive.currentPage = 1;
-  renderArchive();
+  requestArchiveRender();
 }
 
 function updateFilterZero() {
@@ -525,14 +624,36 @@ __
 //,, EVENT HANDLERS
 //,,-------------------------------------------*/
 function setupEvents() {
+  const howToLink = document.querySelector("#howToLink");
+  const howToDialog = document.querySelector("#howToDialog");
+  const howToClose = document.querySelector("#howToClose");
+
+  howToLink?.addEventListener("click", (event) => {
+    event.preventDefault();
+    howToDialog?.showModal();
+  });
+
+  howToClose?.addEventListener("click", () => {
+    howToDialog?.close();
+  });
+
+  howToDialog?.addEventListener("click", (event) => {
+    if (event.target === howToDialog) {
+      howToDialog.close();
+    }
+  });
+
   if (archive.container) {
+    /* -------------------- */
     archive.container.addEventListener("click", (event) => {
+      /* -------------------- */
       const spinButton = event.target.closest("[data-action='spin']");
       if (spinButton) {
         spinRandomizer();
         return;
       }
 
+      /* -------------------- */
       const card = event.target.closest(".archivecard__container");
 
       if (!card) {
@@ -551,7 +672,9 @@ function setupEvents() {
 
   const viewButtons = document.querySelector(".viewbtn--container");
   if (viewButtons) {
+    /* -------------------- */
     viewButtons.addEventListener("click", (event) => {
+      /* -------------------- */
       const viewButton = event.target.closest(".view__btn[data-view]");
       if (!viewButton) {
         return;
@@ -562,23 +685,27 @@ function setupEvents() {
       archive.randomizedProjects = [];
       cancelRandomizerSpin();
 
-      viewButtons.querySelectorAll(".view__btn[data-view]").forEach((button) => {
-        const isActive = button === viewButton;
-        button.classList.toggle("active", isActive);
-        button.setAttribute("aria-pressed", String(isActive));
-      });
+      viewButtons
+        .querySelectorAll(".view__btn[data-view]")
+        .forEach((button) => {
+          const isActive = button === viewButton;
+          button.classList.toggle("active", isActive);
+          button.setAttribute("aria-pressed", String(isActive));
+        });
 
       updateViewControls();
       updateFilterVisibility();
-
-      renderArchive();
+      updateTigerPadding();
+      requestArchiveRender();
     });
   }
 
-  const filterContainer = document.querySelector(".filter--container");
+  const filterContainer = document.querySelector(".header");
 
   if (filterContainer) {
+    /* -------------------- */
     filterContainer.addEventListener("click", (event) => {
+      /* -------------------- */
       const filterBtn = event.target.closest(".filtermenu__item");
 
       if (filterBtn) {
@@ -603,11 +730,12 @@ function setupEvents() {
         }
 
         filterBtn.classList.toggle("active", !isActive);
-        renderArchive();
+        requestArchiveRender();
         updateFilterZero();
         return;
       }
 
+      /* -------------------- */
       const filterToggleBtn = event.target.closest(".filter__toggles--btn");
       if (filterToggleBtn) {
         const group = filterToggleBtn.dataset.group;
@@ -631,6 +759,7 @@ function setupEvents() {
         return;
       }
 
+      /* -------------------- */
       const filterGroupButton = event.target.closest(".filtermenu__group--btn");
       if (filterGroupButton) {
         const group = filterGroupButton.dataset.group;
@@ -639,28 +768,40 @@ function setupEvents() {
           `.filtermenu__items[data-group="${group}"]`,
         );
 
-        if (tri && filterMenu) {
-          filterMenu.classList.toggle("active");
-          filterGroupButton.classList.toggle("active");
-          tri.textContent = filterGroupButton.classList.contains("active")
-            ? "▲"
-            : "▼";
+        if (filterMenu) {
+          const isOpen = filterMenu.classList.toggle("active");
+          filterGroupButton.classList.toggle("active", isOpen);
+
+          if (tri) {
+            tri.textContent = isOpen ? "▲" : "▼";
+          }
         }
+
         return;
       }
 
+      /* -------------------- */
       const filterCollapseButton = event.target.closest(".filter__clps");
       if (filterCollapseButton) {
         toggleFilterSearch();
         return;
       }
 
+      /* -------------------- */
       const filterClearButton = event.target.closest(".filter__clear");
       if (filterClearButton) {
         clearFilters();
         return;
       }
 
+      const filterParent = event.target.closest(".filter__grid");
+      if (filterParent) {
+        const activeFilterButton = event.target.closest(
+          ".filter__actives__item",
+        );
+        if (!activeFilterButton) activeFilterSearch();
+      }
+      /* -------------------- */
       const activeFilterButton = event.target.closest(".filter__actives__item");
       if (activeFilterButton) {
         const filterGroup = activeFilterButton.dataset.group;
@@ -670,15 +811,15 @@ function setupEvents() {
           archive.filters[filterGroup] || []
         ).filter((item) => item !== filterCat);
         removeFilterActive(filterGroup, filterCat);
-        renderArchive();
+        requestArchiveRender();
         updateFilterZero();
         return;
       }
 
+      /* -------------------- */
       const hideFilterButton = event.target.closest(".filter__hide");
       if (hideFilterButton) {
         const tempGrid = document.querySelector(".filter__grid");
-
         if (tempGrid) {
           tempGrid.classList.toggle("collapse");
           const isCollapsed = tempGrid.classList.contains("collapse");
@@ -687,9 +828,14 @@ function setupEvents() {
             : "<span>🫣</span>Hide Search Bar";
         }
       }
+
+      const filterBackDrop = event.target.closest(".filter__backdrop");
+      if (filterBackDrop) toggleFilterSearch();
     });
 
+    /* -------------------- */
     filterContainer.addEventListener("focusin", (event) => {
+      /* -------------------- */
       const searchInput = event.target.closest("#searchInput");
 
       if (searchInput) {
@@ -697,7 +843,9 @@ function setupEvents() {
       }
     });
 
+    /* -------------------- */
     filterContainer.addEventListener("keydown", (event) => {
+      /* -------------------- */
       const searchInput = event.target.closest("#searchInput");
 
       if (!searchInput) {
@@ -712,18 +860,22 @@ function setupEvents() {
     });
   }
 
+  /* -------------------- */
   setupViewSliders();
 
   if (archive.pagination) {
+    /* -------------------- */
     archive.pagination.addEventListener("click", (event) => {
+      /* -------------------- */
       const pageButton = event.target.closest("[data-page]");
 
       if (pageButton) {
         archive.currentPage = Number(pageButton.dataset.page);
-        renderArchive();
+        requestArchiveRender();
         return;
       }
 
+      /* -------------------- */
       const actionButton = event.target.closest("[data-page-action]");
 
       if (!actionButton) {
@@ -738,15 +890,16 @@ function setupEvents() {
         archive.currentPage += 1;
       }
 
-      renderArchive();
+      requestArchiveRender();
     });
   }
 
   if (archive.searchInput) {
+    /* -------------------- */
     archive.searchInput.addEventListener("input", (event) => {
       archive.search = event.target.value;
       archive.currentPage = 1;
-      renderArchive();
+      requestArchiveRender();
     });
   }
 }
@@ -834,28 +987,21 @@ function generateFilters() {
     )
     .join("");
 
-  const filterMarkup = `
-    <div class="filter__clps--container">
-      <div class="filter__clps--left">
-        <button class="filter__clps">
-          <span>⤡</span>Open Search & Filter Bar
-        </button>
-        <button class="filter__hide button-default active">
+  const tempuseltaer = `<button class="filter__hide button-default active">
           <span>🫣</span>Hide Search Bar
         </button>
-      </div>
-      <button class="filter__clear">
-        <span>⌫</span> clear search and filters
-      </button>
-    </div>
+    `;
+
+  const filterMarkup = /* HTML */ `
     <div class="filter__grid">
-      <div class="filter__count">
-        <div>Entries Available based on search query and active filters:</div>
-        <span id="filterCount">0</span>
-      </div>
       <div class="filter__search">
         <div class="filter__search--container">
-          <input id="searchInput" type="text" placeholder="Search..." autocomplete="off" />
+          <input
+            id="searchInput"
+            type="text"
+            placeholder="Search..."
+            autocomplete="off"
+          />
           <span class="search-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none">
               <circle cx="10.5" cy="10.5" r="6.5"></circle>
@@ -863,12 +1009,25 @@ function generateFilters() {
             </svg>
           </span>
         </div>
+        <div class="filter__search--info">
+          <p>Try searching up a name, genre or keyword</br>Here are some examples to start:</p>
+
+          <ul>
+            <li>Comedy</li>
+            <li>Spotlight Artist</li>
+            <li>Operational Material</li>
+            <li>Review</li>
+          </ul>
+        </div>
       </div>
       <div class="filters--parent active">
         <div class="filter__actives--container">
           <div class="filter__actives"></div>
         </div>
         <div class="filters--container active">${allFilters}</div>
+      </div>
+      <div class="filter__count">
+        <span id="filterCount" class="font-terminal">0</span>
       </div>
     </div>
   `;
@@ -892,7 +1051,7 @@ function renderCards(projects) {
 
   archive.container.replaceChildren();
 
-  if (archive.viewMode === "randomizer") {
+  if (archive.viewMode === "random") {
     renderRandomizer(archive.filteredProjects);
     return;
   }
@@ -900,7 +1059,7 @@ function renderCards(projects) {
   const fragment = document.createDocumentFragment();
 
   projects.forEach((project) => {
-    fragment.append(createCard(project));
+    fragment.append(createCard(project, archive.viewMode));
   });
 
   archive.container.append(fragment);
@@ -908,9 +1067,7 @@ function renderCards(projects) {
 
 function renderRandomizer(projects) {
   if (
-    archive.randomizedProjects.some(
-      (project) => !projects.includes(project),
-    )
+    archive.randomizedProjects.some((project) => !projects.includes(project))
   ) {
     archive.randomizedProjects = [];
   }
@@ -952,13 +1109,14 @@ function renderRandomizer(projects) {
       const reel = document.createElement("div");
       reel.className = "archive-slot-machine__reel";
       reel.setAttribute("aria-label", `Random pick ${index + 1}`);
-      reel.append(createCard(project));
+      reel.append(createCard(project, archive.viewMode));
       reels.append(reel);
     });
   } else if (projects.length > 0) {
     for (let index = 0; index < Math.min(3, projects.length); index += 1) {
       const reel = document.createElement("div");
-      reel.className = "archive-slot-machine__reel archive-slot-machine__symbol";
+      reel.className =
+        "archive-slot-machine__reel archive-slot-machine__symbol";
       reel.setAttribute("aria-hidden", "true");
       reel.textContent = "✦";
       reels.append(reel);
@@ -1006,20 +1164,23 @@ function spinRandomizer() {
     });
   }
 
-  archive.randomizerTimer = window.setTimeout(() => {
-    finishRandomizerSpin();
-  }, archiveSpinAnimationSource ? 15000 : 1200);
+  archive.randomizerTimer = window.setTimeout(
+    () => {
+      finishRandomizerSpin();
+    },
+    archiveSpinAnimationSource ? 15000 : 1200,
+  );
 }
 
 function finishRandomizerSpin() {
-  if (!archive.randomizerTimer || archive.viewMode !== "randomizer") {
+  if (!archive.randomizerTimer || archive.viewMode !== "random") {
     return;
   }
 
   window.clearTimeout(archive.randomizerTimer);
   archive.randomizerTimer = null;
   archive.randomizedProjects = pickRandomProjects(archive.filteredProjects, 3);
-  renderArchive();
+  requestArchiveRender();
 }
 
 function cancelRandomizerSpin() {
@@ -1048,23 +1209,83 @@ function pickRandomProjects(projects, count) {
   return picks;
 }
 
-function createCard(project) {
+function createCard(project, view) {
   const card = document.createElement("article");
-  card.className = `archivecard__container archivecard--${archive.viewMode}`;
+  card.className = `archivecard__container archivecard--${view}`;
   card.dataset.slug = project.slug;
   card.dataset.title = project.title;
 
-  card.innerHTML = `
-    <div class="thumbnail__container">
-      ${project.thumbnail ? `<img class="thumbnail__img" src="${project.thumbnail}" alt="" loading="lazy" decoding="async">` : ""}
-    </div>
-    <div class="infocard">
+  if (view == "grid" || view == "random") {
+    card.innerHTML = /* HTML */ `
       <div class="infocard__title">${project.title}</div>
-      <div class="infocard__tags">${project.year}</div>
-    </div>
-    <div class="infocard__des">${project.desc}</div>
-  `;
+      <div class="infocard">
+        <div class="infocard__tags">
+          <div class="infocard__tags--header">festival year</div>
+          <div>${project.year ? project.year : ""}</div>
+        </div>
+        <div class="infocard__tags">
+          <div class="infocard__tags--header">credits</div>
+          <div>
+            ${project.cardEls.Credits != "null" ? project.cardEls.Credits : ""}
+          </div>
+        </div>
+      </div>
 
+      <div class="infocard__des">${project.desc ? project.desc : ""}</div>
+      <div class="thumbnail__container">
+        ${project.thumbnail
+          ? `<img class="thumbnail__img" src="${project.thumbnail}" alt="" decoding="async">`
+          : ""}
+      </div>
+    `;
+  } else if (view == "list") {
+    let mediums = project.filters.medium;
+    if (mediums == "null") mediums = null;
+    if (mediums) {
+      mediums = mediums.split(",").map((value) => value.trim());
+      mediums = mediums
+        .map(
+          (value) => `
+          <div class="infocard__medium">${value}</div>        
+        `,
+        )
+        .join("");
+    }
+    card.innerHTML = /* HTML */ `
+      <div class="thumbnail__container">
+        ${project.thumbnail
+          ? `<img class="thumbnail__img" src="${project.thumbnail}" alt="" decoding="async">`
+          : ""}
+      </div>
+      <div class="archivecard__list-main">
+        <div class="infocard__title">${project.title}</div>
+        <div class="infocard__des">${project.desc ? project.desc : ""}</div>
+      </div>
+      <div class="archivecard__list--container">
+        <div class="infocard__tags--header">Medium</div>
+        <div
+          class="archivecard__list-medium"
+          style="display: ${mediums ? "flex" : "none"}"
+        >
+          ${mediums ? mediums : ""}
+        </div>
+      </div>
+
+      <div class="archivecard__list-meta">
+        <div class="infocard__tags">
+          <div class="infocard__tags--header">Festival year</div>
+          <div>${project.year ? project.year : ""}</div>
+        </div>
+        <div class="infocard__tags">
+          <div class="infocard__tags--header">Credits</div>
+          <div class="archivecard__list-credits">
+            ${project.cardEls.Credits != "null" ? project.cardEls.Credits : ""}
+          </div>
+        </div>
+      </div>
+    `;
+  } else if (view == "random") {
+  }
   return card;
 }
 
@@ -1134,6 +1355,7 @@ function restoreF() {
 }
 
 function updateWindowWidth() {
+  /* -------------------- */
   window.addEventListener("resize", () => {
     window.windowWidth = window.innerWidth;
   });
@@ -1158,7 +1380,7 @@ async function fetchSheet(url) {
   const response = await fetch(url);
   const text = await response.text();
   const jsonString = text.substring(
-    text.indexOf("{"),
+    text.indexOf("{") || view == "random",
     text.lastIndexOf("}") + 1,
   );
   const json = JSON.parse(jsonString);
@@ -1221,30 +1443,17 @@ function parseToObjects(text) {
     });
 }
 function restoreFilters() {
-  archive.filters = {
-    medium: [],
-    programme: [],
-    tags: [],
-    year: [],
-    language: [],
-    country: [],
-  };
+  archive.filters = createDefaultFilterState();
   activeFilters = [];
   tempC = document.querySelectorAll(".filtermenu__item");
   tempC.forEach((c) => c.classList.remove("active"));
 }
 function restoreF() {
-  facetedFilters = {
-    medium: [],
-    programme: [],
-    tags: [],
-    year: [],
-    language: [],
-    country: [],
-  };
+  facetedFilters = createDefaultFilterState();
 }
 // event for updating the window width?
 function updateWindowWidth() {
+  /* -------------------- */
   window.addEventListener("resize", () => {
     windowWidth = window.innerWidth;
   });
